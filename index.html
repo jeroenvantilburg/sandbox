@@ -3,19 +3,35 @@
 <head>
     <script src="scripts/fabric.min.js"></script>
     <!--script src="beep.js"></script-->
+        <style>
+    {
+        box-sizing: border-box;
+    }
+    /* Set additional styling options for the columns*/
+    .column {
+    float: left;
+    /*width: 600;*/
+    }
+
+    .row:after {
+    content: "";
+    display: table;
+    clear: both;
+    }
+    </style>
 </head>
   <body>
-<div style="position:relative;width:500px;height:500px">
-    <canvas id="c" width="500" height="500" style="border:1px solid #ccc"></canvas>
-</div>
-
-<audio id="myAudio">
-  <source src="audio/beep440Hz.ogg" type="audio/ogg">
-  <source src="audio/beep440Hz.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
-</audio>
-      
-<h3>Korte instructies:</h3>
+    <div class="row">
+      <div class="column">
+        <h2>Online Systeembord</h2>
+        <div id="canvas1" style="position:relative;width:600px;height:450px;top:0px; left:0px">
+          <canvas id="c" width="600" height="450" style="border:1px solid #ccc">
+          Your browser does not support HTML5 Canvas.
+          </canvas>
+        </div>    
+      </div>
+        <div class="column">
+          <h3>Beknopte instructie:</h3>
 <ul> 
   <li><b>Verbindingssnoeren maken:</b><br/>
   Klik op een rode cirkel en sleep het naar een andere cirkel.</li>
@@ -23,33 +39,47 @@
   Klik op een rode cirkel van een verbinding en sleep het terug.</li>
   <li><b>Drukschakelaar:</b><br/>
   Met een dubbelklik kan de schakelaar worden vastgezet.</li>
+  <li><b>Zoemer:</b><br/>
+  Er zit een vertraging in de zoemer van een halve seconde.</li>
+  <li><b>Meer informatie:</b><br/>
+    Zie de handleinding van het <a href="http://www.cma-science.nl/resources/nl/practicum/b0020.pdf">systeembord</a>.</li>  
 </ul>
+        </div>
+    </div>
+    
+    <audio id="myAudio">
+      <source src="audio/beep440Hz.ogg" type="audio/ogg">
+      <source src="audio/beep440Hz.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>  
+    
+    <audio id="player" controls></audio>
 
-      
       
 <script id="main">
 (function() {
-
+  
   // Mixed analog / digital
   var low = 0.0, high = 5.0, loThreshold = 0.8, hiThreshold = 1.4; // from Systeembord manual
   function isHigh(x) {return x > hiThreshold; };
   function isLow(x) {return x < loThreshold; }; 
   function invert(x) {return isHigh(x) ? low : high; }; 
 
+  // Sizes of the elements
+  var boxWidth = 150, boxHeight=100, boxHeightSmall = 50;
+  
   // Create canvas
-  var canvas = this.__canvas = new fabric.Canvas('c', { selection: false });
+  var canvas = this.__canvas = new fabric.Canvas('c', { selection: false, backgroundColor: 'lightgrey', });
   fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
-
+  
+  
   // Make movable circle for wire
   function makeCircle(left, top, line1, node){
     var c = new fabric.Circle({
       left: left,
       top: top,
-      strokeWidth: 5,
       radius: 5,
       fill: 'red',
-      //stroke: '#666',
-      //selectable: false,
     });
     c.hasControls = c.hasBorders = false;
 
@@ -62,38 +92,31 @@
 
   // Make line for wire
   function makeLine(coords) {
-    return new fabric.Line(coords, {
-      fill: 'red',
-      stroke: 'red',
-      strokeWidth: 5,
-      //selectable: false,
-      evented: false
-    });
+    return new fabric.Line(coords, {fill: 'red', stroke: 'red', strokeWidth: 3,
+                                    selectable: false, evented: false });
   }
 
   // Make wire (= movable circle + line + fixed circle)
   function makeWire(x1,y1,node) { 
-    var circ = new fabric.Circle({left: x1, top: y1, strokeWidth: 5, radius: 5, 
-                                fill: 'red', selectable: false});
+    var circ = new fabric.Circle({left: x1, top: y1, strokeWidth: 1, stroke: 'black' , radius: 6, 
+                                fill: 'red', selectable: false, evented: false});
     canvas.add(circ);
     var line = makeLine([ x1, y1, x1, y1 ]);
     canvas.add( line );
     canvas.add( makeCircle(x1, y1, line, node) );
-  }  
+  }
+  
+  // Set nice-looking gradients for buttons
+  var gradientButtonUp = { x1: -10, y1: -10, x2: 20, y2: 20,
+                          colorStops: { 0: 'white', 1: '#333333' }};
+  var gradientButtonDw = { x1: -10, y1: -10, x2: 22, y2: 22,
+                          colorStops: { 0: '#333333', 1: 'white' }};
 
   // Make a push button
   function makeButton(left, top, node){
-    var c = new fabric.Circle({
-      left: left,
-      top: top,
-      strokeWidth: 5,
-      radius: 5,
-      fill: 'blue',
-      //stroke: '#666',
-      selectable: false,
-    });
-    c.hasControls = c.hasBorders = false;
-
+    var c = new fabric.Circle({left: left, top: top, strokeWidth: 3, stroke: 'grey', radius: 10,
+                               fill: '#222222', selectable: false });
+    c.setGradient('stroke', gradientButtonUp );
     c.name = "button";
     c.node = node;
     return c;
@@ -104,6 +127,7 @@
     this.x1 = x1;
     this.y1 = y1;
     this.child = null;
+    this.state = low; // only used by reset button of pulse counter
     this.eval = function() { return (this.child) ? this.child.eval() : false ; };
     this.isInput = true;
     makeWire(x1,y1,this);
@@ -120,17 +144,25 @@
   }    
 
   // AND node
-  function ANDNode(x1,y1,input1,input2) { 
+  function ANDNode(x1,y1,input1,input2, color) { 
     this.x1 = x1;
     this.y1 = y1;
     this.child1 = input1;
     this.child2 = input2;
-    this.eval = function() {
-      return (this.child1 && this.child1 != this && isHigh(this.child1.eval()) &&
-              this.child2 && this.child2 != this && isHigh(this.child2.eval()) ) ?
-              high : low ;
-    };      
     this.isInput = false;
+    this.state = low;
+    this.isSet = false;
+    this.eval = function() {
+      // loop protection
+      if( this.isSet ) {
+        this.isSet = false;
+        return this.state;
+      } else {
+        this.isSet = true;
+        this.state = (isHigh(this.child1.eval()) && isHigh(this.child2.eval()) ) ? high : low ;
+        return this.state;
+      }
+    };      
     makeWire(x1,y1,this);
   }
 
@@ -140,12 +172,20 @@
     this.y1 = y1;
     this.child1 = input1;
     this.child2 = input2;
+    this.isInput = false;
+    this.state = low;
+    this.isSet = false;
     this.eval = function() {
-      return ((this.child1 && this.child1 != this && isHigh(this.child1.eval())) ||  // Fix this TODO !!!!!
-              (this.child2 && this.child2 != this && isHigh(this.child2.eval()))) ?
-              high : low ;
+      // loop protection
+      if( this.isSet ) {
+        this.isSet = false;
+        return this.state;
+      } else {
+        this.isSet = true;
+        this.state = (isHigh(this.child1.eval()) || isHigh(this.child2.eval()) ) ? high : low ;
+        return this.state;
+      }
     };      
-    this.isInput = false;     
 
     makeWire(x1,y1,this);
   }
@@ -155,11 +195,20 @@
     this.x1 = x1;
     this.y1 = y1;
     this.child1 = input1;
-    this.eval = function() {
-      return (this.child1 && this.child1 != this && isHigh(this.child1.eval())) ? low : high ;
-    };      
     this.isInput = false;     
-
+    this.state = low;
+    this.isSet = false;
+    this.eval = function() {
+      // loop protection
+      if( this.isSet ) {
+        this.isSet = false;
+        return this.state;
+      } else {
+        this.isSet = true;
+        this.state = (isHigh(this.child1.eval()) ) ? low : high ;
+        return this.state;
+      }
+    };
     makeWire(x1,y1,this);
   }    
   
@@ -169,11 +218,20 @@
     this.y1 = y1;
     this.child1 = input1;
     this.compare = low;
-    this.eval = function() {
-      return (this.child1 && this.child1 != this && this.child1.eval() > this.compare) ? 
-              high : low ;
-    };      
     this.isInput = false;     
+    this.state = low;
+    this.isSet = false;
+    this.eval = function() {
+      // loop protection
+      if( this.isSet ) {
+        this.isSet = false;
+        return this.state;
+      } else {
+        this.isSet = true;
+        this.state = (this.child1.eval() > this.compare) ? high : low ;
+        return this.state;
+      }
+    };
 
     makeWire(x1,y1,this);
   }  
@@ -183,29 +241,55 @@
     this.x1 = x1;
     this.y1 = y1;
     this.child1 = input1;
-    this.eval = function() {
-      var binary = (this.child1.eval() / high ) * 15;
-      var bit = (binary & (1<<bin)) >> bin;
-      return (this.child1 && this.child1 != this && bit == 1 ) ? high : low ;
-    };      
     this.isInput = false;     
+    this.state = low;
+    this.isSet = false;
+    this.eval = function() {
+      // loop protection
+      if( this.isSet ) {
+        this.isSet = false;
+        return this.state;
+      } else {
+        this.isSet = true;
+        var binary = (this.child1.eval() / high ) * 15;
+        var bit = (binary & (1<<bin)) >> bin;
+        this.state = ( bit == 1 ) ? high : low ;
+        return this.state;
+      }
+    };
+
+    makeWire(x1,y1,this);
+  }    
+
+  // Binary node with stored counter
+  function BinaryNodeS(x1,y1,bin) { 
+    this.x1 = x1;
+    this.y1 = y1;
+    this.isInput = false;     
+    this.counter = 0;
+    this.eval = function() {
+      var binary = this.counter ;
+      var bit = (binary & (1<<bin)) >> bin;
+      return ( bit == 1 ) ? high : low ;
+    }
 
     makeWire(x1,y1,this);
   }    
 
 
+  
     
   // Draw the box plus text
-  function drawElementBox(x1,y1,height,width,text) {
+  function drawElementBox(x1,y1,width,height,text) {
       // Draw text in box
       var textbox = new fabric.Textbox(text.toString(), {
-        left: x1+50, top: y1+(height-10), width: width, fontSize: 12, textAlign: 'center', 
-        selectable: true });
+        left: x1+0.5*width, top: y1+(height-10), width: width, fontSize: 12, textAlign: 'center', 
+        selectable: false, evented: false });
       canvas.add(textbox)
       textbox.sendToBack();
       // Draw box
       var r = new fabric.Rect({left: x1+0.5*width, top: y1+0.5*height, height: height, width: width, 
-                               fill: 'lightgrey', selectable: false, 
+                               fill: 'lightgrey', selectable: false, evented: false,
                                stroke: 'black', strokeWidth: 2   });
       canvas.add(r);
       r.sendToBack();
@@ -213,39 +297,39 @@
   
   // Create AND port with its nodes
   function ANDPort(x1,y1) {
-      drawElementBox(x1,y1,80,100,'EN-poort');
+      drawElementBox(x1,y1,boxWidth,boxHeight,'EN-poort');
       this.output = function() {return true;};
-      let node1 = new InputNode(x1+15, y1+25 );
-      let node2 = new InputNode(x1+15, y1+55 );
-      let node3 = new ANDNode(x1+85, y1+40, node1, node2);
+      let node1 = new InputNode(x1+25, y1+25 );
+      let node2 = new InputNode(x1+25, y1+boxHeight-25 );
+      let node3 = new ANDNode(x1+boxWidth-25, y1+0.5*boxHeight, node1, node2);
       this.nodes = [ node1, node2 , node3 ] ;
   }
 
   // Create OR port with its nodes
   function ORPort(x1,y1) {
-      drawElementBox(x1,y1,80,100,'OF-poort');
+      drawElementBox(x1,y1,boxWidth,boxHeight,'OF-poort');
+      let node1 = new InputNode(x1+25, y1+25 );
+      let node2 = new InputNode(x1+25, y1+boxHeight-25 );
+      let node3 = new ORNode(x1+boxWidth-25, y1+0.5*boxHeight, node1, node2);
       this.output = function() { return true; };
-      let node1 = new InputNode(x1+15, y1+25 );
-      let node2 = new InputNode(x1+15, y1+55 );
-      let node3 = new ORNode(x1+85, y1+40, node1, node2);
       this.nodes = [ node1, node2 , node3 ] ;     
   }
 
   // Create NOT port with its nodes
   function NOTPort(x1,y1) {
-      drawElementBox(x1,y1,40,100,'Invertor');
+      drawElementBox(x1,y1,boxWidth,boxHeightSmall,'Invertor');
       this.output = function() { return true; };
-      let node1 = new InputNode(x1+15, y1+20 );
-      let node2 = new NOTNode(x1+85, y1+20, node1);
+      let node1 = new InputNode(x1+25, y1+0.5*boxHeightSmall );
+      let node2 = new NOTNode(x1+boxWidth-25, y1+0.5*boxHeightSmall, node1);
       this.nodes = [ node1, node2 ] ;     
   }
 
   // Create memory cell with its nodes
   function Memory(x1,y1) {
-      drawElementBox(x1,y1,80,100,'Geheugencel');
-      let node1 = new InputNode(x1+15, y1+25 );
-      let node2 = new InputNode(x1+15, y1+55 );
-      let node3 = new OutputNode(x1+85, y1+40);
+      drawElementBox(x1,y1,boxWidth,boxHeight,'Geheugencel');
+      let node1 = new InputNode(x1+25, y1+25 );
+      let node2 = new InputNode(x1+25, y1+boxHeight-25 );
+      let node3 = new OutputNode(x1+boxWidth-25, y1+0.5*boxHeight);
       this.nodes = [ node1, node2, node3 ] ;     
       this.output = function() { 
           if( isHigh(node2.eval()) ) this.nodes[2].state = low;
@@ -256,12 +340,13 @@
     
   // Create LED with node
   function LED(x1,y1) {
-      drawElementBox(x1,y1,40,100,'LED');
+      drawElementBox(x1,y1,boxWidth,boxHeightSmall,'LED');
       
       // Draw LED
-      var c = new fabric.Circle({left: x1+75, top: y1+20, radius: 5, 
-                                 fill: 'darkred', selectable: false, 
+      var c = new fabric.Circle({left: x1+boxWidth-25, top: y1+20, radius: 5, 
+                                 fill: 'darkred', selectable: false, evented: false,
                                  stroke: 'black', strokeWidth: 2   });
+      c.setGradient('stroke', gradientButtonDw );
       canvas.add(c);
 
       this.nodes = [ new InputNode(x1+25, y1+20 ) ] ;    
@@ -280,8 +365,8 @@
 
   // Create sound output
   function Sound(x1,y1) {
-      drawElementBox(x1,y1,40,100,'Zoemer');
-      this.nodes = [ new InputNode(x1+25, y1+20 ) ] ;    
+      drawElementBox(x1,y1,boxWidth,boxHeightSmall,'Zoemer');
+      this.nodes = [ new InputNode(x1+25, y1+0.5*boxHeightSmall) ] ;    
       this.audio = document.getElementById("myAudio"); 
       // Control LED behaviour
       this.output = function() {
@@ -297,12 +382,12 @@
     
   // Create switch
   function Switch(x1,y1) {
-      drawElementBox(x1,y1,40,100,'Drukschakelaar');
+      drawElementBox(x1,y1,boxWidth,boxHeightSmall,'Drukschakelaar');
       this.output = function() { return true;};
-      let node = new OutputNode(x1+85, y1+20 );
+      let node = new OutputNode(x1+boxWidth-25, y1+0.5*boxHeightSmall );
       this.nodes = [ node ] ;
       // Draw the push button
-      canvas.add( makeButton(x1+15, y1+20, node) );
+      canvas.add( makeButton(x1+25, y1+0.5*boxHeightSmall, node) );
   }
 
   // Create an number-input DOM element
@@ -315,27 +400,26 @@
       input.style.left = (x1).toString()+"px";
       input.style.top = (y1).toString()+"px";
       input.className = "css-class-name"; // set the CSS class
-      body = document.getElementsByTagName("BODY")[0];
+      //body = document.getElementsByTagName("BODY")[0];
+      body = document.getElementById("canvas1");
       body.appendChild(input); // put it into the DOM
       return input ;
   }
     
   // Create a pulse generator
   function Pulse(x1,y1) {
-      drawElementBox(x1,y1,40,100,'Pulsgenerator');
+      drawElementBox(x1,y1,boxWidth,boxHeightSmall,'Pulsgenerator');
 
       // Create unique element ID
       var elementName = "frequency"+x1.toString()+y1.toString();
 
       // Create an input DOM element
-      var input = inputDOM(x1+30,y1+10,elementName,"1","0.1","0.5","10");
+      var input = inputDOM(x1+20,y1+10,elementName,"1","0.1","0.5","10");
 
-      let node = new OutputNode(x1+85, y1+20 );
+      let node = new OutputNode(x1+boxWidth-25, y1+0.5*boxHeightSmall );
       this.nodes = [ node ] ; 
       this.pulseStarted = false;
-      this.output = function() {
-          return true;
-      };
+      this.output = function() { return true; };
       
       // Start the pulse generator
       this.startPulse = function() {
@@ -349,16 +433,16 @@
 
   // Variable voltage power
   function VarVoltage(x1,y1) {
-      drawElementBox(x1,y1,40,100,'Variabele spanning');
+      drawElementBox(x1,y1,boxWidth,boxHeightSmall,'Variabele spanning');
  
       // Create unique element ID
       var elementName = "voltage"+x1.toString()+y1.toString();
 
       // Create an input DOM element
-      var input = inputDOM(x1+30,y1+10,elementName,"5","0.1","0.1","5");
+      var input = inputDOM(x1+20,y1+10,elementName,"5","0.1","0.1","5");
 
       // Create an ouput node and set voltage from the DOM element
-      let node = new OutputNode(x1+85, y1+20 );
+      let node = new OutputNode(x1+boxWidth-25, y1+0.5*boxHeightSmall );
       node.state = input.value;
       this.nodes = [ node ] ;     
       this.output = function() {
@@ -370,17 +454,17 @@
 
   // Comparator
   function Comparator(x1,y1) {
-      drawElementBox(x1,y1,80,100,'Comparator');
+      drawElementBox(x1,y1,boxWidth,boxHeight,'Comparator');
 
       // Create unique element ID
       var elementName = "voltage"+x1.toString()+y1.toString();
       
       // Create an input DOM element
-      var input = inputDOM(x1+35,y1+50,elementName,"2.5","0.1","0.1","5");
+      var input = inputDOM(x1+40,y1+60,elementName,"2.5","0.1","0.1","5");
 
       // Create the node
-      let node1 = new InputNode(x1+15, y1+15 );
-      let node2 = new ComparatorNode(x1+85, y1+25, node1);
+      let node1 = new InputNode(x1+25, y1+25 );
+      let node2 = new ComparatorNode(x1+boxWidth-25, y1+0.5*boxHeight, node1);
       node2.compare = input.value; // set compare value
       this.nodes = [ node1, node2 ] ;     
       this.output = function() {
@@ -391,58 +475,172 @@
     
   // Create ADC
   function ADC(x1,y1) {
-      drawElementBox(x1,y1,40,100,'AD omzetter');
+      drawElementBox(x1,y1,boxWidth,boxHeightSmall,'AD omzetter');
       this.output = function() { return true;};
-      let node4 = new InputNode( x1+15, y1+20 );
-      let node3 = new BinaryNode(x1+40, y1+20, node4, 3 );
-      let node2 = new BinaryNode(x1+55, y1+20, node4, 2 );
-      let node1 = new BinaryNode(x1+70, y1+20, node4, 1 );
-      let node0 = new BinaryNode(x1+85, y1+20, node4, 0 );
+      let node4 = new InputNode( x1+25, y1+0.5*boxHeightSmall );
+      let node3 = new BinaryNode(x1+boxWidth-85, y1+0.5*boxHeightSmall, node4, 3 );
+      let node2 = new BinaryNode(x1+boxWidth-65, y1+0.5*boxHeightSmall, node4, 2 );
+      let node1 = new BinaryNode(x1+boxWidth-45, y1+0.5*boxHeightSmall, node4, 1 );
+      let node0 = new BinaryNode(x1+boxWidth-25, y1+0.5*boxHeightSmall, node4, 0 );
       this.nodes = [ node4,node3,node2,node1,node0 ] ;
   }
 
   // Create Counter
   function Counter(x1,y1) {
-      drawElementBox(x1,y1,80,200,'Pulsen teller');
-      this.output = function() { return true;};
-      this.nodes = [ ] ;
-  }
+      drawElementBox(x1,y1,2*boxWidth,boxHeight,'Pulsen teller');
+      this.counter = 0;
+      this.state = low;
 
+      let node4 = new InputNode( x1+25, y1+20 ); // count pulses
+      let node5 = new InputNode( x1+25, y1+50 ); // inhibit 
+      let node6 = new InputNode( x1+25, y1+80 ); // reset
+
+      // Create the binary output nodes
+      let node3 = new BinaryNodeS(x1+2*boxWidth-85, y1+25, 3 );
+      let node2 = new BinaryNodeS(x1+2*boxWidth-65, y1+25, 2 );
+      let node1 = new BinaryNodeS(x1+2*boxWidth-45, y1+25, 1 );
+      let node0 = new BinaryNodeS(x1+2*boxWidth-25, y1+25, 0 );
+
+      // Draw the push button
+      canvas.add( makeButton(x1+90, y1+boxHeight-20, node6) );
+
+      this.textbox = new fabric.Textbox((this.counter).toString(), {
+        left: x1+2*boxWidth-50, top: y1+65, width: 60, fontSize: 44, textAlign: 'right',
+        fill: 'red', backgroundColor: '#330000', fontFamily: 'Courier New',
+        selectable: false, evented: false });
+      canvas.add(this.textbox);
+
+      this.nodes = [ node6,node5,node4,node3,node2,node1,node0 ] ;
+      this.output = function() {
+        // reset counter (check button or reset node)
+        if( isHigh(node6.state) || isHigh(node6.eval()) ) { 
+          this.counter = 0;
+          this.state = low;
+          this.textbox.text = (this.counter).toString();
+          return true;
+        } else {
+          // inhibit counter
+          if( node5.child && !isHigh(node5.eval()) ) {
+            this.state = low;
+            return true; 
+          }
+          var currentState = node4.eval();
+          if( isHigh(currentState) && isLow(this.state) ) {
+            this.state = high;
+            ++this.counter; // only count rising edge
+            if( this.counter == 16) this.counter = 0; // reset counter
+            this.textbox.text = (this.counter).toString();
+          }
+          if( isLow(currentState) && isHigh(this.state) ) { this.state = low;}
+        }
+        // update counters
+        this.nodes[3].counter = this.counter;
+        this.nodes[4].counter = this.counter;
+        this.nodes[5].counter = this.counter;
+        this.nodes[6].counter = this.counter;
+        return true;
+      };
+  }
     
-    
-  var elements = [new Switch(25,160),
-                  new Switch(25,200),
-                  new Pulse(25,240),
-                  new VarVoltage(25,280),
-                  new ADC(25,320),
-                  //new Pulse(25,160),
-                  new Comparator(125,0),
-                  new Comparator(225,0),
-                  new ANDPort(125,80),
-                  new ANDPort(225,80),
-                  new ORPort(225,160),
-                  new Memory(125,160),
-                  new NOTPort(125,240),
-                  new NOTPort(225,240),
-                  new Counter(125,280),
-                  new LED(325,0), 
-                  new LED(325,40), 
-                  new LED(325,80), 
-                  new LED(325,120),
-                  new Sound(325,160)];
+  var elements = [new Switch(0,150),
+                  new Switch(0,200),
+                  new Switch(0,250),
+                  new Pulse(0,300),
+                  new VarVoltage(0,350),
+                  new ADC(0,400),
+                  new Comparator(150,0),
+                  new Comparator(300,0),
+                  new ANDPort(150,100),
+                  new ANDPort(300,100),
+                  new ORPort(300,200),
+                  new Memory(150,200),
+                  new NOTPort(150,300),
+                  new NOTPort(300,300),
+                  new Counter(150,350),
+                  new LED(450,0), 
+                  new LED(450,50), 
+                  new LED(450,100), 
+                  new LED(450,150),
+                  new Sound(450,200)];
 
   // Main engine: evaluate all elements (elements evaluate the nodes)
   function evaluateBoard() {
+    //var t0 = performance.now()
+
     for (i = 0; i < elements.length; i++) { 
        elements[i].output();
     } 
     canvas.renderAll();
+    //var t1 = performance.now()
+    //console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.")
+
   }
 
+  /*  const handleSuccess = function(stream) {
+    if (window.URL) {
+      player.srcObject = stream;
+    } else {
+      player.src = stream;
+    }
+  };*/
+
+  //navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+  //    .then(handleSuccess);
+  
+  //navigator.getUserMedia = navigator.getUserMedia ||
+  //                   navigator.webkitGetUserMedia ||
+  //                   navigator.mozGetUserMedia;
+
+  /*if (navigator.getUserMedia) {
+   navigator.getUserMedia({ audio: true, video: { width: 1280, height: 720 } },
+      function(stream) {
+         alert("Accessed the Microphone");
+      },
+      function(err) {
+         alert("The following error occured: " + err.name);
+      }
+    );
+  } else {
+   alert("getUserMedia not supported");
+  }*/
+
+  /*navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+.then(function(stream) {
+  audioContext = new AudioContext();
+  analyser = audioContext.createAnalyser();
+  microphone = audioContext.createMediaStreamSource(stream);
+  javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+  analyser.smoothingTimeConstant = 0.8;
+  analyser.fftSize = 1024;
+
+  microphone.connect(analyser);
+  analyser.connect(javascriptNode);
+  javascriptNode.connect(audioContext.destination);
+  javascriptNode.onaudioprocess = function() {
+      var array = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(array);
+      var values = 0;
+
+      var length = array.length;
+      for (var i = 0; i < length; i++) {
+        values += (array[i]);
+      }
+
+      var average = values / length;
+
+    console.log(Math.round(average));
+    // colorPids(average);
+  }
+  })
+  .catch(function(err) {
+    // handle the error 
+});*/
+  
   //alert("Your name is ");
 
-  // Make sure that the engine is run every 50 millisecond  
-  setInterval(evaluateBoard, 50);
+  // Make sure that the engine is run every 25 millisecond  
+  setInterval(evaluateBoard, 25);
 
   // Change button color and state of OutputNode when pushed
   canvas.on({'mouse:dblclick': mouseClick,
@@ -451,8 +649,13 @@
     var p = e.target;
     if( !p || p.name != "button") return;
     p.node.state = invert(p.node.state);
-    if( isHigh(p.node.state) ) p.set({ fill: 'darkblue'});
-    else p.set({ fill: 'blue'});  
+    if( isHigh(p.node.state) ) {
+      p.set({ fill: '#333333', strokeWidth: 3, radius: 10});
+      p.setGradient('stroke', gradientButtonDw );
+    } else {
+      p.set({ fill: '#222222', strokeWidth: 3, radius: 10});
+      p.setGradient('stroke', gradientButtonUp );
+    }
   }
     
   // Change button color and state of OutputNode to low when mouse is up
@@ -460,8 +663,8 @@
     var p = e.target;
     if( !p || p.name != "button") return;
     p.node.state = low;
-    if( isHigh(p.node.state) ) p.set({ fill: 'darkblue'});
-    else p.set({ fill: 'blue'});  
+    p.set({ fill: '#222222', strokeWidth: 3, radius: 10});
+    p.setGradient('stroke', gradientButtonUp );
   });     
     
   // Control behaviour when moving wire
