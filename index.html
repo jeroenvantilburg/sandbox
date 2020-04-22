@@ -40,7 +40,15 @@
   <li><b>Drukschakelaar:</b><br/>
   Met een dubbelklik of klik-sleep kan de schakelaar worden vastgezet.</li>
   <li><b>Zoemer:</b><br/>
-  Er zit een vertraging in de zoemer van een halve seconde.</li>
+  Er zit een vertraging in de zoemer van een halve seconde.</br>
+  In iOS/Safari moet je vaak eerst de zoemer handmatig initialiseren, door hieronder op play te klikken.
+    <audio id="myAudio" controls preload="auto">
+      <source src="audio/beep440Hz.ogg" type="audio/ogg">
+      <source src="audio/beep440Hz.mp3" type="audio/mpeg">
+      <source src="audio/beep440Hz.wav" type="audio/wav">
+      Your browser does not support the audio element.
+    </audio>  
+  </li>
   <li><b>Meer informatie:</b><br/>
     Zie de handleinding van het <a href="http://www.cma-science.nl/resources/nl/practicum/b0020.pdf">systeembord</a>.</li>  
 </ul>
@@ -48,12 +56,6 @@
     </div>
 
 
-    <audio id="myAudio" preload="auto">
-      <source src="audio/beep440Hz.ogg" type="audio/ogg">
-      <source src="audio/beep440Hz.mp3" type="audio/mpeg">
-      <source src="audio/beep440Hz.wav" type="audio/wav">
-      Your browser does not support the audio element.
-    </audio>  
     
     <!--audio id="player" controls preload="auto" src="audio/beep440Hz.mp3"></audio-->
     
@@ -87,7 +89,7 @@
               new VarVoltage(0,50),
               new Switch(0,100),
               new LED(450,250),
-              //new LED(450,300),
+              new LED(450,300),
              ];
     /*elements = [
                     new Switch(0,200),
