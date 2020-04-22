@@ -4,7 +4,7 @@ function isHigh(x) {return x > hiThreshold; };
 function isLow(x) {return x < loThreshold; }; 
 function invert(x) {return isHigh(x) ? low : high; };
 
-var clockPeriod = 50; // time between evaluate-calls (speed of the engine)
+var clockPeriod = 25; // time between evaluate-calls (speed of the engine)
 
 // Sizes of the elements
 var boxWidth = 150, boxHeight=100, boxHeightSmall = 50;
