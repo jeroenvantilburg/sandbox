@@ -55,9 +55,12 @@
       Your browser does not support the audio element.
     </audio>  
     
+    <audio id="player" controls preload="auto" src="audio/beep440Hz.mp3"></audio>
+    
     <script src="scripts/systemboard_engine.js"></script>
     <script id="main">
 (function() {
+    
   // Define the elements of the systemboard
   elements = [new Switch(0,150),
               new Switch(0,200),
@@ -84,7 +87,7 @@
               new VarVoltage(0,50),
               new Switch(0,100),
               new LED(450,250),
-              //new LED(450,300),
+              new LED(450,300),
              ];
     /*elements = [
                     new Switch(0,200),

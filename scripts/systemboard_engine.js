@@ -2,7 +2,9 @@
 var low = 0.0, high = 5.0, loThreshold = 0.8, hiThreshold = 1.4; // from Systeembord manual
 function isHigh(x) {return x > hiThreshold; };
 function isLow(x) {return x < loThreshold; }; 
-function invert(x) {return isHigh(x) ? low : high; }; 
+function invert(x) {return isHigh(x) ? low : high; };
+
+var clockPeriod = 50; // time between evaluate-calls (speed of the engine)
 
 // Sizes of the elements
 var boxWidth = 150, boxHeight=100, boxHeightSmall = 50;
@@ -700,14 +702,14 @@ function evaluateBoard() {
   
   //alert("Your name is ");
 
-// Make sure that the engine is run every 50 milliseconds  
-setInterval(evaluateBoard, 25);
+// Make sure that the engine is run every clockPeriod  
+setInterval(evaluateBoard, clockPeriod);
 
 //evaluateBoard();
 
 // Change button color and state of OutputNode when pushed
 canvas.on({'mouse:dblclick': mouseClick,
-             'mouse:down':mouseClick});
+           'mouse:down':mouseClick});
 function mouseClick(e) {
     var p = e.target;
     if( !p || p.name != "button") return;
@@ -725,7 +727,9 @@ function mouseClick(e) {
 canvas.on('mouse:up', function(e) {
     var p = e.target;
     if( !p || p.name != "button") return;
-    p.node.state = low;
+    // a mouse-click can be too short for the engine to evaluate itself
+    setTimeout(function(){ p.node.state = low; }, clockPeriod+5); // add small delay
+    //p.node.state = low;
     p.set({ fill: '#222222', strokeWidth: 3, radius: 10});
     p.setGradient('stroke', gradientButtonUp );
 });     
