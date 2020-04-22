@@ -701,7 +701,7 @@ function evaluateBoard() {
   //alert("Your name is ");
 
 // Make sure that the engine is run every 50 milliseconds  
-setInterval(evaluateBoard, 1000);
+setInterval(evaluateBoard, 100);
 
 //evaluateBoard();
 
