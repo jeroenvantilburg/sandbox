@@ -1,70 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-      <script src="scripts/jquery-3.5.0.min.js"></script>
-</head>
-  <body>
-     <h2>Bla bla</h2>
-     
-<div id="demo">
-<button type="button" onclick="loadXMLDoc()">Change Content</button>
-</div>
-    
-<input id="fileinput" type="file" style="width:0px">
-<!--button id="stupid_hack" onclick="readFile(this)">Open bestand</button-->
-<button id="stupid_hack" onclick="fileinput.click()">Open bestand</button>
-<!--button id="button">Open bestand</button>
-<input id="file-input" type="file" name="name" style="display: none;" /-->
+<html>
+<body>
 
+<h2>Using the XMLHttpRequest Object</h2>
+
+<div id="demo">
+<button type="button" onclick="readFile('../systeembord/xml/systeembord.xml')">Change Content</button>
+</div>
+
+<input id="fileinput" type="file" style="display: none;">
+<button id="stupid_hack" onclick="fileinput.click()">Open bestand</button>
+
+<div id="bla">
+</div>
 <script>
 
-var defaultFile = "systeembord.xml" ;
+var control = document.getElementById("fileinput");
+control.addEventListener("change", function(event) {
+  document.getElementById("bla").innerHTML = control.value;  
+  let files = control.files;
+  //Use createObjectURL, this should address any CORS issues.
+  let filePath = URL.createObjectURL(files[0]);
+  readFile(filePath);
+});
 
-function loadXMLDoc() {
+function readFile(url) {
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-      document.getElementById("demo").innerHTML = this.responseText;
+      //document.getElementById("bla").innerHTML = this.responseText;
+      myFunction(this);
     }
   };
-  xhttp.open("GET", defaultFile, true);
+  xhttp.open("GET", url, true);
   xhttp.send();
 }
 
-/*$('#button').on('click', function() {
-    $('#file-input').trigger('click');
-});*/
+function myFunction(xml) {
+  var i;
+  var xmlDoc = xml.responseXML;
+  var table = "";
+  var x = xmlDoc.getElementsByTagName("systeembord");
+  for (i = 0; i <x.length; i++) { 
+    table += "Found element</br>";
+    var domElements = x[i].getElementsByTagName("element");
 
-  
-  
-$("#fileinput").change(function(event) {
-    readFile(event);
-});
-  
-  
-function readFile(input) {
-  let file = input.files[0];
+    for (j = 0; j < domElements.length; j++) { 
+      //table += domElements[j].childNodes[0].nodeValue; 
+      table += domElements[j].getAttribute('name') + ' ';
+      table += 'x=' + domElements[j].getAttribute('x') + ' ';
+      table += 'y=' + domElements[j].getAttribute('y') + ' </br>';
+     
+      var xStr = parseInt(domElements[j].getAttribute('x')); 
+      var yStr = parseInt( domElements[j].getAttribute('y'));
+      var z= xStr + yStr;
+      table += 'z=' + z + ' </br>';
 
-  let reader = new FileReader();
+      
+    }
+    
 
-  reader.readAsText(file);
-
-  reader.onload = function() {
-    document.getElementById("demo").innerHTML = reader.result;
-    console.log(reader.result);
-  };
-
-  reader.onerror = function() {
-    console.log(reader.error);
-  };
+  }
+  document.getElementById("bla").innerHTML = table;
 }
 
 
-    
-    
-    </script>
-    
+</script>
 
-      
-  </body>
+</body>
 </html>
+
+
