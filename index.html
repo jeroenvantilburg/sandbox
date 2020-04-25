@@ -1,30 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+      <script src="scripts/jquery-3.5.0.min.js"></script>
 </head>
   <body>
-     <h2>Bla</h2>
+     <h2>Bla bla</h2>
      
 <div id="demo">
 <button type="button" onclick="loadXMLDoc()">Change Content</button>
 </div>
+    
+<input id="fileinput" type="file" style="width:0px">
+<!--button id="stupid_hack" onclick="readFile(this)">Open bestand</button-->
+<button id="stupid_hack" onclick="fileinput.click()">Open bestand</button>
+<!--button id="button">Open bestand</button>
+<input id="file-input" type="file" name="name" style="display: none;" /-->
 
 <script>
 
-var defaultFile = "systeembord.xml" 
+var defaultFile = "systeembord.xml" ;
 
 function loadXMLDoc() {
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-      document.getElementById("demo").innerHTML =
-      this.responseText;
+      document.getElementById("demo").innerHTML = this.responseText;
     }
   };
   xhttp.open("GET", defaultFile, true);
   xhttp.send();
 }
-</script>
+
+/*$('#button').on('click', function() {
+    $('#file-input').trigger('click');
+});*/
+
+  
+  
+$("#fileinput").change(function(event) {
+    readFile(event);
+});
+  
+  
+function readFile(input) {
+  let file = input.files[0];
+
+  let reader = new FileReader();
+
+  reader.readAsText(file);
+
+  reader.onload = function() {
+    document.getElementById("demo").innerHTML = reader.result;
+    console.log(reader.result);
+  };
+
+  reader.onerror = function() {
+    console.log(reader.error);
+  };
+}
+
+
+    
+    
+    </script>
     
 
       
