@@ -11,10 +11,63 @@
 <input id="fileinput" type="file" style="display: none;">
 <button id="stupid_hack" onclick="fileinput.click()">Open bestand</button>
 
+<!--button type="submit" onclick="window.open('systeembord.xml')">Download!</button>
+
+<form method="get" action="systeembord.xml">
+   <button type="submit">Download</button>
+</form-->
+
+  <!--textarea id="text-val" rows="4">This is the content of my file</textarea><br/-->
+
+
+<input type="button" id="dwn-btn" value="Download"/>
+<input type="text" id="xml_filename" value="systeembord1.xml" size=20><br>
+
+  
 <div id="bla">
 </div>
 <script>
+  
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
 
+// Start file download.
+document.getElementById("dwn-btn").addEventListener("click", function(){
+   // Generate download of hello.txt file with some content
+   var text = createXmlFile();
+   var filename = document.getElementById("xml_filename").value;  
+   download(filename, text);
+}, false);
+  
+function createXmlFile(){
+  var xmlDoc = document.implementation.createDocument(null,"systeembord");
+  var x, y, i, newElement, txt, xmlDoc;
+  newElement = xmlDoc.createElement("element");
+  
+  attName = xmlDoc.createAttribute("name");
+  attName.nodeValue = "Switch";
+  newElement.setAttributeNode(attName);
+  attPosX = xmlDoc.createAttribute("x");
+  attPosX.nodeValue = "100";
+  newElement.setAttributeNode(attPosX);
+  
+  x = xmlDoc.getElementsByTagName("systeembord")[0];
+  x.appendChild(newElement);
+
+  var serializer = new XMLSerializer();
+  var xmlString = serializer.serializeToString(xmlDoc);
+  return xmlString;
+
+}  
+
+  
 var control = document.getElementById("fileinput");
 control.addEventListener("change", function(event) {
   document.getElementById("bla").innerHTML = control.value;  
