@@ -31,5 +31,33 @@ MAC: 74:4D:28:1C:A2:B6</td></tr>
 </td></tr>  
 </table>  
 
+    
+  <script src="scripts/jquery-3.5.0.min.js"></script>      
+  <script id="main">
+(function() {
+  
+  // load all code after the document
+  $("document").ready(function(){
+
+  url = "http://192.168.2.201/webfig/";
+
+  $.get(url, function(data) {
+    // scrape the html
+    //console.log(bla);    
+    //  $.get(bla, function(data2) {
+    console.log(data);
+    var bla = (data.split('Wireless Clients')[1]).split('</iframe>')[0];
+    console.log(bla);
+
+    });
+});
+  
+})();
+</script>
+
+
+    
+    
+  
 </body>
 </html>
