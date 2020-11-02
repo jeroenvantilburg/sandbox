@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<div style="display: inline-block; margin-left: 10px">
+  <button id="pointer" class="btn btn-info">Pointer</button>
+  <button id="pencil" class="btn btn-info">Pencil</button>
+  <button id="eraser" class="btn btn-info">Eraser</button>
+  <button id="clear-canvas" class="btn btn-info">Clear</button>
+
+  <label for="drawing-line-width">Line width:</label>
+  <span class="info">1</span><input type="range" value="1" min="0" max="10" id="drawing-line-width">
+
+  <label for="drawing-color">Line color:</label>
+  <input type="color" value="#000000" id="drawing-color">
+  <a href="" onclick="screenshot(this)">Screenshot</a>
+</div>
+    <script src="scripts/fabric.min.js"></script>
+    <script src="scripts/jquery-3.5.0.min.js"></script>
+
+   <div id="canvas1" style="position:relative;width:100px;height:100px;top:0px; left:0px">
+      <canvas id="c" width="100" height="100" style="border:1px solid #ccc">
+        Your browser does not support HTML5 Canvas.
+      </canvas>
+   </div>
+
+<script id="main">
+  
+  
+  //(function() {
+
+  var dom = function(id){return document.getElementById(id)};
+
+  var canvas = this.__canvas = new fabric.Canvas('c', {
+    isDrawingMode: true,
+    isDeleteMode: false
+  });
+
+  fabric.Object.prototype.transparentCorners = false;
+  fabric.Object.prototype.hasControls = false;
+  fabric.Object.prototype.hasBorders = false;
+  fabric.Object.prototype.padding = 10;
+
+  dom('clear-canvas').onclick = function() { canvas.clear() };
+
+  dom('pointer').onclick = function() {
+    canvas.isDrawingMode = false;
+    canvas.isDeleteMode = false;
+    fabric.Object.prototype.hasControls = true;
+    fabric.Object.prototype.hasBorders = true;
+    /*if (canvas.isDrawingMode) {
+      dom('pointer').innerHTML = 'Pointer';
+    }*/
+  };
+
+  dom('pencil').onclick = function() {
+    canvas.isDrawingMode = true;
+    canvas.isDeleteMode = false;
+  };    
+    
+  dom('drawing-color').onchange = function() {
+    var brush = canvas.freeDrawingBrush;
+    brush.color = this.value;
+  };
+    
+  dom('drawing-line-width').onchange = function() {
+    canvas.freeDrawingBrush.width = parseInt(this.value, 10) || 1;
+    this.previousSibling.innerHTML = this.value;
+  };
+
+  dom('eraser').onclick = function() { 
+    canvas.isDrawingMode = false;
+    canvas.isDeleteMode = true;
+  };
+    
+  if (canvas.freeDrawingBrush) {
+    canvas.freeDrawingBrush.color = dom('drawing-color').value;
+    canvas.freeDrawingBrush.width = parseInt(dom('drawing-line-width').value, 10) || 1;
+  }
+    
+  // Event listener: remove the element
+  canvas.on('mouse:up', function(e) {
+    var p = e.target;
+    if( canvas.isDeleteMode && p ) {
+      canvas.remove(p);
+    }
+  });
+
+   // Make a screenshot
+  function screenshot(htmlElement) {
+    var image = canvas.toDataURL({format: 'png', multiplier: 2});  
+    htmlElement.setAttribute("download","screenshot.png");
+    htmlElement.setAttribute("href", image);
+  }  
+    
+  // Event listener for resizing the window
+  //window.addEventListener('resize', resizeCanvas, false);
+  $(window).resize( resizeCanvas );
+  function resizeCanvas() {    
+    var divCanvas = document.getElementById("canvas1");
+    var newWidth = window.innerWidth-20;
+    if( newWidth > 100 ) { // minimum size needs to stay at 100px
+      divCanvas.style.width = newWidth;
+      canvas.setWidth(newWidth);
+      canvas.renderAll();
+    }
+    var newHeight = window.innerHeight-300;
+    console.log(newHeight);
+    if( newHeight > 100 ) { // minimum size needs to stay at 100px
+      divCanvas.style.height = newHeight;
+      canvas.setHeight(newHeight);
+      canvas.renderAll();
+    }
+
+  }
+    
+  // load all code after the document
+  $("document").ready(function(){
+    // resize on init
+    resizeCanvas();
+  });
+
+//})();
+   
+  </script>
+
+    <noscript>Your browser does not support JavaScript!</noscript>
+
+  
+</body>
+</html>
