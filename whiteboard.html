@@ -11,6 +11,9 @@
   <button id="undo" class="btn btn-info">Undo</button>
   <button id="redo" class="btn btn-info">Redo</button>
 
+  <label for="drawing-line-width">Line width:</label>
+  <span class="info">2</span><input type="range" value="2" min="0" max="10" id="drawing-line-width">
+
 
   <button id="black" class="btn color" style="background-color:black">B</button>
   <button id="red" class="btn color" style="background-color:red">R</button>
@@ -18,14 +21,9 @@
   <button id="blue" class="btn color" style="background-color:blue">B</button>
 
 
-
-
-
-  <label for="drawing-line-width">Line width:</label>
-  <span class="info">2</span><input type="range" value="2" min="0" max="10" id="drawing-line-width">
-
   <label for="drawing-color">Line color:</label>
   <input type="color" value="#000000" id="drawing-color">
+
   <a href="" onclick="screenshot(this)">Screenshot</a>
 </div>
     <script src="scripts/fabric.min.js"></script>
@@ -168,10 +166,23 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
     console.log(this.value)
   };
 
-  dom('black').onclick = function() { canvas.freeDrawingBrush.color = "black"; };
-  dom('red').onclick = function() { canvas.freeDrawingBrush.color = "red"; };
-  dom('green').onclick = function() { canvas.freeDrawingBrush.color = "green"; };
-  dom('blue').onclick = function() { canvas.freeDrawingBrush.color = "blue"; };
+  dom('black').onclick = function() { 
+    canvas.freeDrawingBrush.color = "black";
+    dom('drawing-color').value = "#000000";
+  };
+  dom('red').onclick = function() { 
+    canvas.freeDrawingBrush.color = "red";
+    dom('drawing-color').value = "#FF0000";
+  };
+  dom('green').onclick = function() { 
+    canvas.freeDrawingBrush.color = "green";
+    console.log(canvas.freeDrawingBrush.color)
+    dom('drawing-color').value = "#00FF00";
+  };
+  dom('blue').onclick = function() { 
+    canvas.freeDrawingBrush.color = "blue";
+    dom('drawing-color').value = "#0000FF";
+  };
 
   
   dom('drawing-line-width').onchange = function() {
