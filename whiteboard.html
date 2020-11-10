@@ -137,6 +137,7 @@
   // end eraser
 
   function moveCanvas( e ) {
+    console.log("Move canvas");
     // Calculate deltas
         let deltaX = 0;
         let deltaY = 0;
@@ -393,6 +394,7 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
 
   canvas.on('mouse:move', function (evt) {
 	  var mouse = this.getPointer(evt.e);
+    console.log("Move mouse");
     if( mousecursor.canvas ) {
       mousecursor
         .set({
