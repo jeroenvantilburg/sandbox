@@ -136,27 +136,36 @@
   }  
   // end eraser
 
-  function moveCanvas( p ) {
+  var isMoving = false;
+  function moveCanvas( evt ) {
+    if( isMoving == false ) {
+      isMoving = true;
     //console.log("Move canvas");
     // Calculate deltas
         let deltaX = 0;
         let deltaY = 0;
-        //if (lastClientX) {
-          deltaX = p.x - lastClientX; //e.clientX - lastClientX;
-        //}
-        //if (lastClientY) {
-          deltaY = p.y - lastClientY; //e.clientY - lastClientY;
-        //}
+        if (lastClientX) {
+          deltaX = evt.clientX - lastClientX;
+        }
+        if (lastClientY) {
+          deltaY = evt.clientY - lastClientY;
+        }
         // Update the last X and Y values
-        lastClientX = p.x;//e.clientX;
-        lastClientY = p.y;//e.clientY;
+        lastClientX = evt.clientX;
+        lastClientY = evt.clientY;
 
         let delta = new fabric.Point(deltaX, deltaY);
         canvas.relativePan(delta);
         canvas.trigger('moved');
         cursor.relativePan(delta);
         cursor.trigger('moved');
-        canvas.requestRenderAll();
+        //canvas.requestRenderAll();
+
+        //lastClientX += deltaX;//e.clientX;
+        //lastClientY += deltaY;//e.clientY;
+        //console.log(lastClientX.toString() + " " + lastClientY.toString() );
+      isMoving = false;
+    }
 
   }
 
@@ -410,19 +419,27 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
       }
     } 
     if (dragMode && mouseDown ) {
-      moveCanvas( mouse );
+      console.log(evt.e.type);
+      console.log(evt.e);
+      moveCanvas( evt.e );
     }
   });
   
   canvas.on('mouse:down', function (evt) {
+    console.log("Mouse down");
+
     mouseDown = true;
 	  var mouse = this.getPointer(evt.e);
     if( mousecursor.canvas ) {
       erasing( mouse );
     } else if( dragMode ) {
       
-      lastClientX = mouse.x ; //evt.e.clientX;
-      lastClientY = mouse.y ; // evt.e.clientY;
+      console.log(evt.e.type);
+      console.log(evt.e);
+      //console.log(type(evt));
+      //console.log(type(evt.e));
+      lastClientX = evt.e.clientX;
+      lastClientY = evt.e.clientY;
       //moveCanvas( mouse );
     }
   });
