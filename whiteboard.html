@@ -404,7 +404,8 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
       if( mouseDown ) {
         erasing(mouse);
       }
-    } else if (dragMode && mouseDown ) {
+    } 
+    if (dragMode && mouseDown ) {
       moveCanvas( evt.e );
     }
   });
