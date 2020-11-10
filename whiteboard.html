@@ -26,6 +26,8 @@
   <label for="background">Background</label>
   <button id="blackBkg" class="btn color" id="background" style="background-color:black">B</button>
   <button id="whiteBkg" class="btn color" id="background" style="background-color:white">W</button>
+  <button id="blackBkgR" style="padding: 0px 0px;"><img src="zwart_rooster_klein.png" width="25" height="25" ></button>
+  <button id="whiteBkgR" style="padding: 0px 0px;"><img src="wit_rooster_klein.png" width="25" height="25" ></button>
 
   <a href="" onclick="screenshot(this)">Screenshot</a>
 
@@ -78,12 +80,12 @@
   
   // Eraser stuff
   var cursor = new fabric.StaticCanvas("cursor");
-  var cursorOpacity = .3;
+  var cursorOpacity = 0.5;
   var mousecursor = new fabric.Circle({ 
     left: -100, 
     top: -100, 
     radius: 25, 
-    fill: "rgba(0,0,0," + cursorOpacity + ")", 
+    fill: "rgba(80,80,80," + cursorOpacity + ")", 
     strokeWidth: 0,
     stroke: "black",
     originX: 'center', 
@@ -383,6 +385,20 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
   dom('whiteBkg').onclick = function() { 
     canvas.backgroundColor = "white";
     canvas.renderAll();
+  };
+
+  dom('blackBkgR').onclick = function() { 
+    var src = 'zwart_rooster_klein.png';
+    canvas.setBackgroundColor({source: src, repeat: 'repeat'}, function () {
+      canvas.renderAll();
+    });
+  };
+  dom('whiteBkgR').onclick = function() { 
+    var src = 'wit_rooster_klein.png';
+    canvas.setBackgroundColor({source: src, repeat: 'repeat'}, function () {
+      canvas.renderAll();
+    });
+  
   };
 
 
