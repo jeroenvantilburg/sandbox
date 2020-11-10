@@ -136,26 +136,28 @@
   }  
   // end eraser
 
-  function moveCanvas( e ) {
-    console.log("Move canvas");
+  function moveCanvas( p ) {
+    //console.log("Move canvas");
     // Calculate deltas
         let deltaX = 0;
         let deltaY = 0;
-        if (lastClientX) {
-          deltaX = e.clientX - lastClientX;
-        }
-        if (lastClientY) {
-          deltaY = e.clientY - lastClientY;
-        }
+        //if (lastClientX) {
+          deltaX = p.x - lastClientX; //e.clientX - lastClientX;
+        //}
+        //if (lastClientY) {
+          deltaY = p.y - lastClientY; //e.clientY - lastClientY;
+        //}
         // Update the last X and Y values
-        lastClientX = e.clientX;
-        lastClientY = e.clientY;
+        lastClientX = p.x;//e.clientX;
+        lastClientY = p.y;//e.clientY;
 
         let delta = new fabric.Point(deltaX, deltaY);
         canvas.relativePan(delta);
         canvas.trigger('moved');
         cursor.relativePan(delta);
         cursor.trigger('moved');
+        canvas.requestRenderAll();
+
   }
 
 
@@ -394,7 +396,7 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
 
   canvas.on('mouse:move', function (evt) {
 	  var mouse = this.getPointer(evt.e);
-    console.log("Move mouse");
+    //console.log("Move mouse");
     if( mousecursor.canvas ) {
       mousecursor
         .set({
@@ -408,18 +410,20 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
       }
     } 
     if (dragMode && mouseDown ) {
-      moveCanvas( evt.e );
+      moveCanvas( mouse );
     }
   });
   
   canvas.on('mouse:down', function (evt) {
     mouseDown = true;
+	  var mouse = this.getPointer(evt.e);
     if( mousecursor.canvas ) {
-      erasing( this.getPointer(evt.e) );
+      erasing( mouse );
     } else if( dragMode ) {
-      lastClientX = evt.e.clientX;
-      lastClientY = evt.e.clientY;
-            moveCanvas( evt.e );
+      
+      lastClientX = mouse.x ; //evt.e.clientX;
+      lastClientY = mouse.y ; // evt.e.clientY;
+      //moveCanvas( mouse );
     }
   });
   
