@@ -136,6 +136,28 @@
   }  
   // end eraser
 
+  function moveCanvas( e ) {
+    // Calculate deltas
+        let deltaX = 0;
+        let deltaY = 0;
+        if (lastClientX) {
+          deltaX = e.clientX - lastClientX;
+        }
+        if (lastClientY) {
+          deltaY = e.clientY - lastClientY;
+        }
+        // Update the last X and Y values
+        lastClientX = e.clientX;
+        lastClientY = e.clientY;
+
+        let delta = new fabric.Point(deltaX, deltaY);
+        canvas.relativePan(delta);
+        canvas.trigger('moved');
+        cursor.relativePan(delta);
+        cursor.trigger('moved');
+  }
+
+
   
   
 
@@ -383,30 +405,10 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
         erasing(mouse);
       }
     } else if (dragMode && mouseDown ) {
-       //if (state === STATE_PANNING && e && e.e) {
-
-        // Calculate deltas
-        let deltaX = 0;
-        let deltaY = 0;
-        if (lastClientX) {
-          deltaX = evt.e.clientX - lastClientX;
-        }
-        if (lastClientY) {
-          deltaY = evt.e.clientY - lastClientY;
-        }
-        // Update the last X and Y values
-        lastClientX = evt.e.clientX;
-        lastClientY = evt.e.clientY;
-
-        let delta = new fabric.Point(deltaX, deltaY);
-        canvas.relativePan(delta);
-        canvas.trigger('moved');
-        cursor.relativePan(delta);
-        cursor.trigger('moved');
-
+      moveCanvas( evt.e );
     }
   });
-
+  
   canvas.on('mouse:down', function (evt) {
     mouseDown = true;
     if( mousecursor.canvas ) {
@@ -414,6 +416,7 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
     } else if( dragMode ) {
       lastClientX = evt.e.clientX;
       lastClientY = evt.e.clientY;
+            moveCanvas( evt.e );
     }
   });
   
