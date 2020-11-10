@@ -11,20 +11,25 @@
   <button id="undo" class="btn btn-info">Undo</button>
   <button id="redo" class="btn btn-info">Redo</button>
 
-  <label for="drawing-line-width">Line width:</label>
+  <label for="drawing-line-width">Width:</label>
   <span class="info">2</span><input type="range" value="2" min="0" max="10" id="drawing-line-width">
-
 
   <button id="black" class="btn color" style="background-color:black">B</button>
   <button id="red" class="btn color" style="background-color:red">R</button>
   <button id="green" class="btn color" style="background-color:green">G</button>
   <button id="blue" class="btn color" style="background-color:blue">B</button>
-
-
-  <label for="drawing-color">Line color:</label>
+  <button id="yellow" class="btn color" style="background-color:yellow">Y</button>
+  <button id="white" class="btn color" style="background-color:white">W</button>
+  <label for="drawing-color">Color:</label>
   <input type="color" value="#000000" id="drawing-color">
+  
+  <label for="background">Background</label>
+  <button id="blackBkg" class="btn color" id="background" style="background-color:black">B</button>
+  <button id="whiteBkg" class="btn color" id="background" style="background-color:white">W</button>
 
   <a href="" onclick="screenshot(this)">Screenshot</a>
+
+
 
   <!--button id="pen">Pen</button>
   <button id="eraser2">Eraser</button-->
@@ -60,6 +65,7 @@
   var dom = function(id){return document.getElementById(id)};
   
   var canvas = this.__canvas = new fabric.Canvas('c', {
+    backgroundColor: 'white',
     isDrawingMode: true,
     redoList: []
   });
@@ -336,7 +342,7 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
   dom('drawing-color').onchange = function() {
     var brush = canvas.freeDrawingBrush;
     brush.color = this.value;
-    console.log(this.value)
+    //console.log(this.value)
   };
 
   dom('black').onclick = function() { 
@@ -349,20 +355,41 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
   };
   dom('green').onclick = function() { 
     canvas.freeDrawingBrush.color = "green";
-    console.log(canvas.freeDrawingBrush.color)
-    dom('drawing-color').value = "#00FF00";
+    //console.log(canvas.freeDrawingBrush.color)
+    dom('drawing-color').value = "#008000";
   };
   dom('blue').onclick = function() { 
     canvas.freeDrawingBrush.color = "blue";
     dom('drawing-color').value = "#0000FF";
   };
-
+  dom('yellow').onclick = function() { 
+    canvas.freeDrawingBrush.color = "yellow";
+    dom('drawing-color').value = "#FFFF00";
+  };
+  dom('white').onclick = function() { 
+    canvas.freeDrawingBrush.color = "white";
+    dom('drawing-color').value = "#FFFFFF";
+  };
   
   dom('drawing-line-width').onchange = function() {
     canvas.freeDrawingBrush.width = parseInt(this.value, 10) || 1;
     this.previousSibling.innerHTML = this.value;
   };
 
+  dom('blackBkg').onclick = function() { 
+    canvas.backgroundColor = "black";
+    canvas.renderAll();
+  };
+  dom('whiteBkg').onclick = function() { 
+    canvas.backgroundColor = "white";
+    canvas.renderAll();
+  };
+
+
+
+
+
+  
     
   if (canvas.freeDrawingBrush) {
     canvas.freeDrawingBrush.color = dom('drawing-color').value;
@@ -427,14 +454,14 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
       }
     } 
     if (dragMode && mouseDown ) {
-      console.log(evt.e.type);
-      console.log(evt.e);
+      //console.log(evt.e.type);
+      //console.log(evt.e);
       moveCanvas( evt.e );
     }
   });
   
   canvas.on('mouse:down', function (evt) {
-    console.log("Mouse down");
+    //console.log("Mouse down");
 
     mouseDown = true;
 	  var mouse = this.getPointer(evt.e);
@@ -442,10 +469,8 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
       erasing( mouse );
     } else if( dragMode ) {
       
-      console.log(evt.e.type);
-      console.log(evt.e);
-      //console.log(type(evt));
-      //console.log(type(evt.e));
+      //console.log(evt.e.type);
+      //console.log(evt.e);
       if( evt.e.type == "mousedown") {
         lastClientX = evt.e.clientX;
         lastClientY = evt.e.clientY;
@@ -524,7 +549,7 @@ canvas.add(rect)
       cursor.renderAll();
     }
     var newHeight = window.innerHeight-50;
-    console.log(newHeight);
+    //console.log(newHeight);
     if( newHeight > 100 ) { // minimum size needs to stay at 100px
       divCanvas.style.height = newHeight;
       canvas.setHeight(newHeight);
