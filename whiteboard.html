@@ -142,17 +142,25 @@
       isMoving = true;
     //console.log("Move canvas");
     // Calculate deltas
-        let deltaX = 0;
-        let deltaY = 0;
+        let deltaX = 0; var x = 0;
+        let deltaY = 0; var y = 0;
+        if( evt.type == "mousemove" ) {
+          x = evt.clientX;
+          y = evt.clientY;
+        } else if( evt.type == "touchmove") {
+          x = evt.touches[0].clientX;
+          y = evt.touches[0].clientY;
+        }
+      
         if (lastClientX) {
-          deltaX = evt.clientX - lastClientX;
+          deltaX = x - lastClientX;
         }
         if (lastClientY) {
-          deltaY = evt.clientY - lastClientY;
+          deltaY = y - lastClientY;
         }
         // Update the last X and Y values
-        lastClientX = evt.clientX;
-        lastClientY = evt.clientY;
+        lastClientX = x; //evt.clientX;
+        lastClientY = y; //evt.clientY;
 
         let delta = new fabric.Point(deltaX, deltaY);
         canvas.relativePan(delta);
@@ -438,8 +446,13 @@ fabric.Canvas.prototype.toggleDragMode = function(dragMode) {
       console.log(evt.e);
       //console.log(type(evt));
       //console.log(type(evt.e));
-      lastClientX = evt.e.clientX;
-      lastClientY = evt.e.clientY;
+      if( evt.e.type == "mousedown") {
+        lastClientX = evt.e.clientX;
+        lastClientY = evt.e.clientY;
+      } else if( evt.e.type == "touchstart") {
+        lastClientX = evt.e.touches[0].clientX;
+        lastClientY = evt.e.touches[0].clientY;
+      }
       //moveCanvas( mouse );
     }
   });
