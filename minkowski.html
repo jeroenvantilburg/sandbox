@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+  <button id="anim">Anim</button>
+
+    <script src="scripts/fabric.min.js"></script>
+    <script src="scripts/jquery-3.5.0.min.js"></script>
+
+      <canvas id="c" width="800" height="800" style="border:1px solid #ccc;
+                                                     position: absolute!important;
+                                                     left: 0!important;
+                                                     top: 0!important;
+                                                     width: 100%!important;
+                                                     height: 100%!important;">
+        Your browser does not support HTML5 Canvas.
+      </canvas>
+
+<script id="main">
+  
+  
+  //(function() {
+
+  var dom = function(id){return document.getElementById(id)};
+  
+  var canvas = this.__canvas = new fabric.Canvas('c', {
+    backgroundColor: 'white',
+  });
+
+  var mouseDown = false;  
+  
+  fabric.Object.prototype.transparentCorners = false;
+  fabric.Object.prototype.hasControls = false;
+  fabric.Object.prototype.hasBorders = false;
+  fabric.Object.prototype.padding = 10;
+  
+  
+  xlines = [];
+  ylines = [];
+  for(var i = 0; i < 20; ++i ) {
+    var xline = new fabric.Line([-1000,0,1000,0],{ 
+      left: 400, 
+      top: 0+i*50, 
+      strokeWidth: 1,
+      stroke: "black",
+      originX: 'center', 
+      originY: 'center'
+    });
+
+    var yline = new fabric.Line([0,-1000,0,1000],{ 
+      left: 0+i*50, 
+      top: 400, 
+      strokeWidth: 1,
+      stroke: "black",
+      originX: 'center', 
+      originY: 'center'
+    });
+
+
+    //var gridLine = line.clone();
+    //gridLine.set({left: 400+i*10});
+    canvas.add(xline);
+    canvas.add(yline);
+    xlines.push(xline);
+    ylines.push(yline);
+
+  }
+  
+  //canvas.add(line);
+  
+
+  var xline = new fabric.Line([-1000,0,1000,0],{ 
+      left: 400, 
+      top: 400, 
+      strokeWidth: 2,
+      stroke: "black",
+      originX: 'center', 
+      originY: 'center'  
+  });
+
+
+  var yline = new fabric.Line([0,-1000,0,1000],{ 
+      left: 400, 
+      top: 400, 
+      strokeWidth: 2,
+      stroke: "black",
+      originX: 'center', 
+      originY: 'center'
+  });
+  
+  canvas.add(xline);
+  canvas.add(yline);
+
+
+  
+  
+  var animateBtn = document.getElementById('anim');
+  animateBtn.onclick = function() {
+    
+    xlines.forEach(function(obj){ 
+      obj.animate({top:"+=10", angle:"-=10"}, { onChange: canvas.renderAll.bind(canvas) });
+
+    });
+
+    ylines.forEach(function(obj){ 
+      obj.animate({left:"+=10", angle:"+=10"}, { onChange: canvas.renderAll.bind(canvas) });
+
+      //obj.animateWidthHeight(); 
+      //obj.dirty = true; 
+    });
+
+
+
+    
+  };
+
+  
+
+  /*dom('pencil').onclick = function() {
+    canvas.isDrawingMode = true;
+    //canvas.toggleDragMode(false);    
+    dragMode = false;
+    setDeleteMode(false);
+    canvas.freeDrawingCursor = 'crosshair';
+    cursor.remove(mousecursor);
+  };*/    
+
+    
+//})();
+   
+  </script>
+
+    <noscript>Your browser does not support JavaScript!</noscript>
+
+  
+</body>
+</html>
