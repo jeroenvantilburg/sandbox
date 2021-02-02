@@ -1,37 +1,41 @@
 // TODO: License
 
+// All code runs in this anonymous function
+// to avoid cluttering the global variables
+(function() {
+
 /* ========== GLOBAL SECTION =================
    Global variables are defined here
    =========================================== */
+  let streaming = false;
+  let videoInput = document.getElementById('videoInput');
+  let startAndStopAuto = document.getElementById('startAndStopAuto');
+  let startAndStopManual = document.getElementById('startAndStopManual');
+  let prevButton = document.getElementById('prev');
+  let playButton = document.getElementById('play');
+  let nextButton = document.getElementById('next');
+  let slider     = document.getElementById('slider');
 
-let streaming = false;
-let videoInput = document.getElementById('videoInput');
-let startAndStopAuto = document.getElementById('startAndStopAuto');
-let startAndStopManual = document.getElementById('startAndStopManual');
-let prevButton = document.getElementById('prev');
-let playButton = document.getElementById('play');
-let nextButton = document.getElementById('next');
-let slider     = document.getElementById('slider');
-
-
-
-let canvasOutput = document.getElementById('canvasOutput');
-let canvasContext = canvasOutput.getContext('2d');
+  let canvasOutput = document.getElementById('canvasOutput');
+  let canvasContext = canvasOutput.getContext('2d');
     
-var width = 0;
-var height = 0;
+  var width = 0;
+  var height = 0;
 
-let integrationTime = 1;
-let rawData = [];
-let frameNumber = 0;
+  let integrationTime = 1;
+  let rawData = [];
+  let frameNumber = 0;
 
-videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
-//videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";
-const FPS = 60;
-
-// Add event listener when the video is loaded
-let videoReady = false;
-videoInput.addEventListener('canplay', () => {
+  //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
+  //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
+  videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";
+  let FPS = 26.6667;
+  
+  //let prevImageData;
+  
+  // Add event listener when the video is loaded
+  let videoReady = false;
+  videoInput.addEventListener('canplay', () => {
     videoReady = true;
     startAndStopManual.removeAttribute('disabled');
     prevButton.removeAttribute('disabled');
@@ -39,7 +43,6 @@ videoInput.addEventListener('canplay', () => {
     nextButton.removeAttribute('disabled');
     slider.removeAttribute('disabled');  
     slider.max = Math.floor( videoInput.duration * FPS) ;
-  console.log("Max"+slider.max)
 
     width = videoInput.videoWidth;
     height = videoInput.videoHeight;
@@ -50,46 +53,172 @@ videoInput.addEventListener('canplay', () => {
     canvasOutput.height = height;
     canvasContext.drawImage(videoInput,0,0, width, height );
     console.log("Resolution: " + width.toString() + " x " + height.toString() );
-});
 
-// Automatic analysis is only enabled when video is ready openCV is ready
-function onOpenCvReady() {
-  videoInput.addEventListener('canplay', () => {
-    startAndStopAuto.removeAttribute('disabled');
-  });  
-}
+    
+    //prevImageData = canvasContext.getImageData(0, 0, width, height).data;
+    
 
-prevButton.addEventListener('click', evt => {
+  });
+
+  // Automatic analysis is only enabled when video is ready openCV is ready
+  document.getElementById('opencv').onload= () => onOpenCvReady();
+  function onOpenCvReady() {
+    videoInput.addEventListener('canplay', () => {
+      startAndStopAuto.removeAttribute('disabled');
+    });
+  }
+
+  
+  // Calculate the frame rate (fps)
+  let fpsButton = document.getElementById('fps');
+  fpsButton.onclick = () => getFPS();
+  function getFPS() {
+    if ( fpsButton.innerText === 'FPS' ) {
+      fpsButton.innerText = 'Interrupt';
+    console.log("Calculating FPS");
+    document.getElementById("fpsWaiting").innerHTML = "Calculating FPS...";
+
+    
+    const canvasFPS = document.createElement('canvas');
+    let ctx = canvasFPS.getContext('2d');
+
+    let prevImageData;// = canvasContext.getImageData(0, 0, width, height).data;
+
+    //console.log(videoInput.seekable);
+    videoInput.currentTime = 0.0 ;
+    //for( let i=0; i < 10; ++i ) {
+    let frameTimes = [0.0];
+    let iStep=0;
+    function compareFrames() {
+      videoInput.addEventListener("seeked", function(e) {
+        e.target.removeEventListener(e.type, arguments.callee);
+        //let width2 = 100;
+        //let height2= 100;
+        //canvasContext.drawImage(videoInput,0,0,width,height);//, 0,0,width2, height2 );
+        //let imageData = canvasContext.getImageData(0, 0, width, height);
+        ctx.drawImage(videoInput,0,0, width, height);//, 0,0,width2, height2 );
+        let imageData = ctx.getImageData(0, 0, width, height);
+      
+        let sameFrame = true;
+    
+        let px = imageData.data;
+        //console.log("px = " + px.length.toString());
+        //console.log(px[10].toString() + "  " + prevImageData[10]);
+
+        let i=0;
+        if( prevImageData !== undefined ) {
+          for(; i < px.length; ++i ) {
+            //console.log(px[i] + "  " + prevImageData[i]);
+            if( px[i] != prevImageData[i] ) {
+              sameFrame = false;
+              frameTimes.push(videoInput.currentTime);
+              break;
+            }
+          }
+          //if( !sameFrame ) 
+          console.log("t = "+videoInput.currentTime + ",  " + i + " " + sameFrame  );
+          
+          
+        }
+        // Store previous image in data buffer
+        prevImageData = px.slice();
+
+        // next step
+        ++iStep;
+        videoInput.currentTime = 0.0 + iStep*0.001 ;
+        
+        // Recursively load the next frame
+        if( videoInput.currentTime < 1.0 && fpsButton.innerText === 'Interrupt') {
+          compareFrames();
+        } else {
+          // Reset to first frame
+          //gotoFrame( 0 );
+          // Add final time
+          frameTimes.push(videoInput.currentTime)
+          document.getElementById("fpsWaiting").innerHTML = "";
+          console.log(frameTimes);
+          
+          // Calculate probability for frameTimes and given FPS
+          let bestProb = 0.0;
+          let bestFPS = 0;
+          for(let testFPS=1; testFPS<70; ++testFPS) {
+            let testProb = calculateProbFPS(frameTimes, testFPS, 0.001);
+            if( testProb > bestProb ) {            
+              bestFPS = testFPS;
+              bestProb = testProb;
+            }
+          }
+          document.getElementById("fpsWaiting").innerHTML = bestFPS;
+          console.log("Best FPS = " + bestFPS);
+          fpsButton.innerText = 'FPS';
+          // Set the new FPS
+          FPS = bestFPS;
+        }
+      });
+    }
+    compareFrames();
+    } else {
+      fpsButton.innerText = 'FPS';
+    }
+    
+  }
+
+  // TODO: maybe make frameTimes integer (unit of ms)
+  function calculateProbFPS(frameTimes, testFPS, stepSize) {
+    // Get the number of steps from the maximum time in frameTimes
+    let nSteps = Math.round(frameTimes[frameTimes.length-1] / stepSize);
+    
+    // Loop over the time and perform simple Fourier analysis
+    let amplitude = 1;
+    let k=0, n=0, prob=0;
+    for(let i=0; i < nSteps; ++i ) {
+      let t = frameTimes[0] + i*stepSize;    
+      if( t >= frameTimes[k] ) {
+        amplitude *= -1;
+        ++k;
+      }
+      if( t >= n/testFPS) {
+        amplitude *= -1;
+        ++n ;              
+      }
+      //console.log("t= " + t + " A=" + amplitude);
+      prob += amplitude;
+    }
+    //console.log("Prob = "+ prob/nSteps);
+    return prob / nSteps;
+  }
+  
+  
+  prevButton.addEventListener('click', evt => {
     // Go to next frame
     gotoFrame(frameNumber-1);
-});
+  });
 
-nextButton.addEventListener('click', evt => {
+  nextButton.addEventListener('click', evt => {
     // Go to next frame
     gotoFrame(frameNumber+1);
-});
+  });
 
-var playIntervalID=0;
-playButton.addEventListener('click', evt => {
-  if ( playButton.innerText === 'play' ) {
-    playButton.innerText = 'pause';
-    playIntervalID = window.setInterval( function() { 
-      if( gotoFrame(frameNumber+1) == false ) {
-       window.clearInterval( playIntervalID );
-       playButton.innerText = 'play';
-      } 
-    }, 1000/FPS );
-  } else {
-    window.clearInterval( playIntervalID );    
-    playButton.innerText = 'play';
-  }
-});
+  var playIntervalID=0;
+  playButton.addEventListener('click', evt => {
+    if ( playButton.innerText === 'play' ) {
+      playButton.innerText = 'pause';
+      playIntervalID = window.setInterval( function() { 
+        if( gotoFrame(frameNumber+1) == false ) {
+          window.clearInterval( playIntervalID );
+          playButton.innerText = 'play';
+        } 
+      }, 1000/FPS );
+    } else {
+      window.clearInterval( playIntervalID );    
+      playButton.innerText = 'play';
+    }
+  });
 
-slider.onchange = function() {
+  slider.onchange = function() {
     // Go to next frame
-  //console.log(this.value)
-  gotoFrame(Math.floor(this.value));
-}
+    gotoFrame(Math.floor(this.value));
+  }
 
 
 
@@ -290,7 +419,7 @@ startAndStopManual.addEventListener('click', evt => {
   
 });
 
-function addRawData( rawDataPoint ) {
+  function addRawData( rawDataPoint ) {
     let thisIndex = rawData.findIndex(entry => entry.t >= frameNumber);
     if( thisIndex < 0 ) { // insert at the end 
       thisItem = rawData.length;
@@ -300,10 +429,10 @@ function addRawData( rawDataPoint ) {
     } else { // insert point at index
       rawData.splice(thisIndex, 0, rawDataPoint );
     }
-}
+  }
 
 
-function updatePositionPlot() { 
+  function updatePositionPlot() { 
     let xPositions = [];
     let yPositions = [];
     rawData.forEach(function (item, index) {
@@ -316,9 +445,9 @@ function updatePositionPlot() {
     positionChart.data.datasets[0].data = xPositions;
     positionChart.data.datasets[1].data = yPositions;
     positionChart.update();  
-}
+  }
 
-function updateVelocityPlot() { 
+  function updateVelocityPlot() { 
     let xVelocities = [];
     let yVelocities = [];
     rawData.forEach(function (item, index) {
@@ -332,52 +461,53 @@ function updateVelocityPlot() {
     velocityChart.data.datasets[0].data = xVelocities;
     velocityChart.data.datasets[1].data = yVelocities;
     velocityChart.update();  
-}
+  }
 
-function getVelocity(index1, index2){
-  let pos2 = getXYposition( rawData[index2] );    
-  let pos1 = getXYposition( rawData[index1] );
-  let t2 = getTime( rawData[index2].t );
-  let t1 = getTime( rawData[index1].t );
-  let dt = t2 - t1;
-  let meanT = 0.5*( t1 + t2 );
-  let velocityX = (pos2.x - pos1.x ) / dt;
-  let velocityY = (pos2.y - pos1.y ) / dt;
-  return { t: meanT, x : velocityX, y : velocityY };
-}
+  function getVelocity(index1, index2){
+    let pos2 = getXYposition( rawData[index2] );    
+    let pos1 = getXYposition( rawData[index1] );
+    let t2 = getTime( rawData[index2].t );
+    let t1 = getTime( rawData[index1].t );
+    let dt = t2 - t1;
+    let meanT = 0.5*( t1 + t2 );
+    let velocityX = (pos2.x - pos1.x ) / dt;
+    let velocityY = (pos2.y - pos1.y ) / dt;
+    return { t: meanT, x : velocityX, y : velocityY }; 
+  }
 
-function getTime(targetFrame) {
-  return (targetFrame + 0.5)/FPS;
-}
+  function getTime(targetFrame) {
+    return (targetFrame + 0.5)/FPS;
+  }
 
-function gotoFrame(targetFrame) {
-  let newTime = (targetFrame + 0.5)/FPS;
-  if( newTime < 0.0 ) {
-    return false;
-  } else if( newTime > videoInput.duration ) {
-    return false;
-  } else {
-    frameNumber = targetFrame;
-    videoInput.currentTime = newTime;
-    videoInput.addEventListener("seeked", function(e) {
+  function gotoFrame(targetFrame) {
+    let newTime = (targetFrame + 0.5)/FPS;
+    console.log(newTime);
+    if( newTime < 0.0 ) {
+      return false;
+    } else if( newTime > videoInput.duration ) {
+      return false;
+    } else {
+      frameNumber = targetFrame;
+      videoInput.currentTime = newTime;
+      videoInput.addEventListener("seeked", function(e) {
         e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
         canvasContext.drawImage(videoInput,0,0, width, height );
         document.getElementById("frameNumber").innerHTML = frameNumber.toString();
         slider.value = frameNumber;
-    });
-    return true;
+      });
+      return true;
+    }
   }
-}
 
 
 
-function getMousePos(canvas, evt) {
+  function getMousePos(canvas, evt) {
     var rect = canvas.getBoundingClientRect();
     return {
       x: evt.clientX - rect.left,
       y: evt.clientY - rect.top
     };
-}
+  }
 
 // Obsolete
 function updatePlot(chart, data) { 
@@ -451,5 +581,5 @@ let velocityChart = new Chart(velocityCtx, {
 });
 velocityChart.options.scales.yAxes[0].scaleLabel.labelString = "Velocity (m/s)";
 
-
+})();
 

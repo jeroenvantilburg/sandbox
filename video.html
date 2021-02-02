@@ -42,6 +42,9 @@ html, body {
   <div class="control"><button id="startAndStopAuto" disabled>Automatic</button></div>
   <div class="control"><button id="startAndStopManual" disabled>Manual</button></div>
 
+  <div class="control"><button id="fps">FPS</button><nobr id="fpsWaiting"></nobr></div>
+
+
   <div class="control">
     <button id="prev" disabled>prev</button>
     <button id="play" disabled>play</button>
@@ -61,7 +64,8 @@ html, body {
       <video id="videoInput" hidden muted></video>        
 
       <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas>
-    </div>
+
+  </div>
 <div class="right">
   <h1>Graphs</h1>
   <canvas id="positionChart" style="border:1px solid #ccc" width="400" height="400">
@@ -80,9 +84,12 @@ html, body {
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
 
+
+<!--script async src="scripts/opencv.3.4.0.js" onload="onOpenCvReady();" type="text/javascript"></script-->  
+<script async src="scripts/opencv.3.4.0.js" id="opencv" type="text/javascript"></script>  
 <script src="scripts/motracker.js"></script>
 
-<script async src="scripts/opencv.3.4.0.js" onload="onOpenCvReady();" type="text/javascript"></script>  
+
   
   
 </body>
