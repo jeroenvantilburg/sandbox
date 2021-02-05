@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--style>
+      video,
+input {
+  display: none;
+}
+    </style-->
+<!--link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"-->
+<style>
+html, body {
+  height: 100%;
+  /*overflow: hidden;*/
+  margin: 0;
+}
+.content {
+  height: 100%;
+}
+.left {
+  float: left;
+  width: 70%;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 0.5em;
+}
+.right {
+  float: left;
+  width: 30%;
+  background: white;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 0.5em;
+}
+    </style>
+  </head>  
+<body>
+
+<h1>HTML5 local video file player example</h1>
+  <div class="control"><button id="fps">FPS</button><nobr id="fpsWaiting"></nobr></div>
+
+  <div class="control">
+    <button id="prev" disabled>prev</button>
+    <button id="play" disabled>play</button>
+    <button id="next" disabled>next</button>
+    <input id="slider" type="range" min="0" max="100" step=1 value="0" disabled>
+    Frame: <nobr id="frameNumber">0</nobr>
+  </div>
+
+  <div class="content">
+    <div class="left">
+      <video id="videoInput" hidden muted></video>        
+      <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas>
+
+  </div>
+<div class="right">
+  <canvas id="fpsChart" style="border:1px solid #ccc" width="400" height="350"></canvas>
+
+  <canvas id="fftChart" style="border:1px solid #ccc" width="400" height="350"></canvas>
+
+  </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  <script src="scripts/videoFrames.js"></script>
+  
+</body>
+</html>

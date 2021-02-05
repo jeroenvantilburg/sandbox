@@ -27,8 +27,8 @@
   let frameNumber = 0;
 
   //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
-  //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
-  videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";
+  videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
+  //videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";
   let FPS = 26.6667;
   
   //let prevImageData;
@@ -115,8 +115,7 @@
               break;
             }
           }
-          //if( !sameFrame ) 
-          console.log("t = "+videoInput.currentTime + ",  " + i + " " + sameFrame  );
+          //if( !sameFrame ) console.log("t = "+videoInput.currentTime + ",  " + i + " " + sameFrame  );
           
           
         }
@@ -128,7 +127,7 @@
         videoInput.currentTime = 0.0 + iStep*0.001 ;
         
         // Recursively load the next frame
-        if( videoInput.currentTime < 1.0 && fpsButton.innerText === 'Interrupt') {
+        if( videoInput.currentTime < videoInput.duration && fpsButton.innerText === 'Interrupt') {
           compareFrames();
         } else {
           // Reset to first frame
@@ -136,12 +135,16 @@
           // Add final time
           frameTimes.push(videoInput.currentTime)
           document.getElementById("fpsWaiting").innerHTML = "";
+          frameTimes.forEach( (frameTime,index) => {
+            console.log("t = " + frameTime + " " + index/frameTime);  
+          } );
           console.log(frameTimes);
           
           // Calculate probability for frameTimes and given FPS
           let bestProb = 0.0;
           let bestFPS = 0;
-          for(let testFPS=1; testFPS<70; ++testFPS) {
+          for(let i=0; i<100; ++i) {
+            let testFPS = 20 + i*0.1;
             let testProb = calculateProbFPS(frameTimes, testFPS, 0.001);
             if( testProb > bestProb ) {            
               bestFPS = testFPS;
