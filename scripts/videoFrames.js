@@ -2,6 +2,37 @@
 
 // All code runs in this anonymous function
 // to avoid cluttering the global variables
+(function localFileVideoPlayer() {
+  'use strict'
+  var URL = window.URL || window.webkitURL
+  /*var displayMessage = function(message, isError) {
+    var element = document.querySelector('#message')
+    element.innerHTML = message
+    element.className = isError ? 'error' : 'info'
+  }*/
+  var playSelectedFile = function(event) {
+    var file = this.files[0]
+    var type = file.type
+    var videoNode = document.querySelector('video')
+    var canPlay = videoNode.canPlayType(type)
+    if (canPlay === '') canPlay = 'no'
+    var message = 'Can play type "' + type + '": ' + canPlay
+    var isError = canPlay === 'no'
+    //displayMessage(message, isError)
+
+    if (isError) {
+      return
+    }
+
+    var fileURL = URL.createObjectURL(file)
+    videoNode.src = fileURL
+  }
+  //var inputNode = document.getElementById('videoInput');//
+  var inputNode = document.querySelector('#videoInput');
+  inputNode.addEventListener('change', playSelectedFile, false)
+})();
+
+
 (function() {
 
 /* ========== GLOBAL SECTION =================
@@ -20,6 +51,9 @@
   let canvasOutput = document.getElementById('canvasOutput');
   let canvasContext = canvasOutput.getContext('2d');
     
+   // Settings
+  const stepSize = 0.001; // size of time step
+
   // Global video parameters
   let width = 0;
   let height = 0;
@@ -28,7 +62,7 @@
 
   //video.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
   //video.src = "file:///Users/jeroen/Downloads/time.mp4";
-  video.src = "file:///Users/jeroen/Downloads/cup.mp4";
+  //video.src = "file:///Users/jeroen/Downloads/cup.mp4";
   
   // Add event listener when the video is loaded
   video.addEventListener('canplay', () => {
@@ -44,11 +78,12 @@
     
   });
   
-  // Update the frame rate (fps) when user give input or when calculated
+  // Update the frame rate (fps) when user gives input or when calculated
   fpsInput.onchange = function() {
     if( this.value > 0 ) {
       FPS = this.value;
-      slider.max = Math.floor( video.duration * FPS);
+      //console.log("FPS = " + FPS + " duration = " + video.duration + " *= " + video.duration * FPS );
+      slider.max = Math.floor( (video.duration * FPS).toFixed(1) ) - 1;
     
       // Always reset to first frame
       gotoFrame( 0 );
@@ -74,19 +109,19 @@
   fpsButton.onclick = function() {
     if ( fpsButton.innerText === 'Auto' ) {
       fpsButton.innerText = 'Abort';
-      getFPS( displayStatus );
+      getFPS( displayStatus ).then( function( frameTimes ){
+          analyseFrameTimes( frameTimes );          
+        }
+      );
     } else {
       fpsButton.innerText = 'Auto';
     }
   }
   
   // Calculate the frame rate (fps)
-  function getFPS( callbackStatus = function(){} ) {
+  async function getFPS( callbackStatus = function(){} ) {
     console.log("Calculating FPS");
     
-    // Settings
-    const stepSize = 0.001; // settings
-
     // Dummy canvas to place video images
     const canvasFPS = document.createElement('canvas');
     let ctx = canvasFPS.getContext('2d');
@@ -101,7 +136,6 @@
       callbackStatus( fractionDone );
     }, 1000 );
     
-    //for( let i=0; i < 10; ++i ) {
     // Setup initial values
     let prevImageData;
     let frameTimes = [0.0];
@@ -110,140 +144,148 @@
     let period = 0.0; // keep track of the average period
     let nPeriods = 0; // number of periods used in average
 
-    function compareFrames() {
-      video.addEventListener("seeked", function(e) {
-        e.target.removeEventListener(e.type, arguments.callee);
-        ctx.drawImage(video,0,0, width, height);//, 0,0,width2, height2 );
-        let imageData = ctx.getImageData(0, 0, width, height);
+    // Loop over the video in small steps
+    while( video.currentTime < video.duration && fpsButton.innerText === 'Abort' ) {
       
-        let sameFrame = true;
-    
-        let px = imageData.data;
-        //console.log("px = " + px.length.toString());
-
-        let i=0;
-        if( prevImageData !== undefined ) {
-          for(; i < px.length; ++i ) {
-            //console.log(px[i] + "  " + prevImageData[i]);
-            if( px[i] != prevImageData[i] ) {
-              sameFrame = false;
-              // Only add frame time when not skipped steps
-              if( skipped < 2 ) frameTimes.push(video.currentTime);
-              break;
-            }
-          }
-          //if( !sameFrame ) console.log("t = "+video.currentTime + ",  " + i + " " + sameFrame  );
-        } else {
-          // Store previous image in data buffer for the first step
-          prevImageData = px.slice();          
-        }
-        
-        if( sameFrame ) {
-          skipped = 1;
-        } else { // TODO: maybe move this part up to line: if skipped < 2
-          if( skipped > 1 ) {
-            skipped = -skipped+1; // Go back
-            // Reset period calculation
-            period = 0.0;
-            nPeriods = 0;
-            console.log("Going back " + (-skipped) + " steps, reseting period.")
-          } else {
-            let prevPeriod = frameTimes[frameTimes.length-1]-frameTimes[frameTimes.length-2];
-            period = (period * nPeriods + prevPeriod)/(nPeriods+1);
-            ++nPeriods;
-            skipped = Math.ceil( (period/stepSize).toFixed(1) ) - 2;
-            // Store previous image in data buffer
-            prevImageData = px.slice();
-            //console.log("Skipping "+skipped + " steps with period = " + period );
-          }
-        }
-        iStep += skipped;
-        video.currentTime = 0.0 + iStep*stepSize;
-        //console.log("Step = " + iStep);
-
-        
-        // Recursively load the next frame
-        if( video.currentTime < video.duration && fpsButton.innerText === 'Abort') {
-          compareFrames();
-        } else {
-          window.clearInterval( statusIntervalID );    
-          // Reset to first frame
-          //gotoFrame( 0 );
-          // Add final time
-          frameTimes.push(video.currentTime)
-          //frameTimes.forEach( (frameTime,index) => {
-          //  console.log("t = " + frameTime + " " + index/frameTime);  
-          //} );
-          //console.log(frameTimes);
-          
-          let maxFPS = fillFPSPlot( frameTimes );
-          console.log("maxFPS rough = " + maxFPS);
-          // Get the best FPS from the intervals
-          let i = 1;
-          let totalDt = 0;
-          let nIntervals = 0;
-          for( ; i<frameTimes.length-1; ++i ) {
-            let dt = frameTimes[i]-frameTimes[i-1];
-            //console.log("dt= " + dt);
-            if( Math.abs(1/dt-maxFPS) < 200.0*stepSize*maxFPS ) { 
-              //console.log("Tot hier")
-              totalDt += dt;
-              ++nIntervals;
-            }
-          }
-          maxFPS = nIntervals / totalDt;
-          console.log("maxFPS = " + maxFPS);
-          
-          // Calculate probability for frameTimes and given FPS
-          let bestProbFFT = 0.0, bestProbOvl = 0.0;
-          let bestFPSFFT = 0, bestFPSOvl = 0;
-          //let fftData = [];
-          for(let i=0; i<980; ++i) {
-            let testFPS = 1 + i*0.1;
-            let testProbFFT = calculateProbFPS(frameTimes, testFPS, stepSize);
-            if( Math.abs(testProbFFT) > bestProbFFT ) {            
-              bestFPSFFT = testFPS;
-              bestProbFFT = Math.abs(testProbFFT);
-            }
-            let testProbOvl = calculateOverlapFPS(frameTimes, testFPS, stepSize);
-            if( Math.abs(testProbOvl) > bestProbOvl ) {            
-              bestFPSOvl = testFPS;
-              bestProbOvl = Math.abs(testProbOvl);
-            }
-
-          }
-          fillFFTPlot( frameTimes, maxFPS );
-          fillOverlapPlot( frameTimes, maxFPS );
-
-          // Calculate required and measured significance
-          let maxErrorFPS = 0.5 / video.duration; // Minimal required accuracy
-          let errorFPS = maxFPS * stepSize / video.duration; // actual accuracy
-          let decimals = Math.max(0,Math.floor( Math.log10(6.0 / errorFPS ) ));;
-          //let decimals = Math.max(0,Math.floor( Math.log10( 6.0/maxErrorFPS ) ));
-          console.log("Uncertainty on FPS = " + errorFPS + 
-                      " (required uncertainty= "+ maxErrorFPS + ")" );
-          
-          // Calculate simple FPS (ignore last entry)
-          simpleFPS = ( (frameTimes.length-2)/frameTimes[frameTimes.length-2]);
-          
-          fpsStatusMsg.innerHTML = 
-            "Interval: " + maxFPS.toFixed(3) + " (sign. " + maxFPS.toFixed(decimals) +
-            "), simple: " + simpleFPS.toFixed(3) +
-            ", FFT: " + bestFPSFFT.toFixed(1) + ", Ovl: " + bestFPSOvl.toFixed(1) ;
-          console.log("Best FPS Int = " + maxFPS);
-          console.log("Best FPS FFT = " + bestFPSFFT);
-          console.log("Best FPS Ovl = " + bestFPSOvl);
-          console.log("Best FPS Smp = " + simpleFPS);
-
-          fpsButton.innerText = 'Auto';
-          // Set the new FPS
-          fpsInput.value = maxFPS.toFixed(decimals);
-          fpsInput.onchange();
-        }
+      // Wait for the video to be ready
+      await new Promise(function(resolve, reject) {
+        video.addEventListener("seeked", function(e) {
+          e.target.removeEventListener(e.type, arguments.callee);
+          resolve();
+        });
       });
-    }
-    compareFrames();    
+
+      // Get the image-data from the video
+      ctx.drawImage(video,0,0, width, height);
+      let imageData = ctx.getImageData(0, 0, width, height);
+      let px = imageData.data;
+      //console.log("px = " + px.length.toString());
+      //console.log("px = " + px[100]);
+
+      let sameFrame = true;
+      if( prevImageData === undefined ) {
+        // Store previous image in data buffer for the first step
+        prevImageData = px.slice();          
+      } else {
+        // Compare this image with the one from the previous step
+        let i=0;
+        for(; i < px.length; ++i ) {
+          //console.log(px[i] + "  " + prevImageData[i]);
+          if( px[i] != prevImageData[i] ) {
+            sameFrame = false;
+            // Only add frame time when not skipped steps
+            if( skipped < 2 ) frameTimes.push(video.currentTime);
+            break;
+          }
+        }
+        //if( !sameFrame ) console.log("t = "+video.currentTime + ",  " + i + " " + sameFrame  );
+      }
+      
+      // Determine how many steps can be skipped
+      if( sameFrame ) {
+        skipped = 1;
+      } else { // TODO: maybe move this part up to line: if skipped < 2
+        if( skipped > 1 ) {
+          skipped = -skipped+1; // Go back
+          // Reset period calculation
+          period = 0.0;
+          nPeriods = 0;
+          //console.log("Going back " + (-skipped) + " steps, reseting period.")
+        } else {
+          let prevPeriod = frameTimes[frameTimes.length-1]-frameTimes[frameTimes.length-2];
+          period = (period * nPeriods + prevPeriod)/(nPeriods+1);
+          ++nPeriods;
+          skipped = Math.ceil( (period/stepSize).toFixed(1) ) - 2;
+          // Store previous image in data buffer
+          prevImageData = px.slice();
+          //console.log("Skipping "+skipped + " steps with period = " + period );
+        }
+      }
+      
+      // Set the next step and the new video time (triggers video.seeked)
+      iStep += skipped;
+      video.currentTime = 0.0 + iStep*stepSize;
+      //console.log("Step = " + iStep + " time = " + video.currentTime);
+    } // end while loop
+    
+    window.clearInterval( statusIntervalID );    
+    // Add final time
+    frameTimes.push(video.currentTime)
+    
+    //frameTimes.forEach( (frameTime,index) => {
+    //  console.log("t = " + frameTime + " " + index/frameTime);  
+    //} );              
+    //analyseFrameTimes( frameTimes );
+    
+    return frameTimes;
   }
+  
+  function analyseFrameTimes( frameTimes ) {
+          
+    let maxFPS = fillFPSPlot( frameTimes );
+    console.log("maxFPS rough = " + maxFPS);
+    
+    // Get the best FPS from the intervals
+    let i = 1;
+    let totalDt = 0;
+    let nIntervals = 0;
+    for( ; i<frameTimes.length-1; ++i ) {
+      let dt = frameTimes[i]-frameTimes[i-1];
+      //console.log("dt= " + dt);
+      if( Math.abs(1/dt-maxFPS) < 200.0*stepSize*maxFPS ) { 
+        //console.log("Tot hier")
+        totalDt += dt;
+        ++nIntervals;
+      }
+    }
+    maxFPS = nIntervals / totalDt;
+    console.log("maxFPS = " + maxFPS);
+          
+    // Calculate probability for frameTimes and given FPS
+    let bestProbFFT = 0.0, bestProbOvl = 0.0;
+    let bestFPSFFT = 0, bestFPSOvl = 0;
+    //let fftData = [];
+    for(let i=0; i<980; ++i) {
+      let testFPS = 1 + i*0.1;
+      let testProbFFT = calculateProbFPS(frameTimes, testFPS, stepSize);
+      if( Math.abs(testProbFFT) > bestProbFFT ) {            
+        bestFPSFFT = testFPS;
+        bestProbFFT = Math.abs(testProbFFT);
+      }
+      let testProbOvl = calculateOverlapFPS(frameTimes, testFPS, stepSize);
+      if( Math.abs(testProbOvl) > bestProbOvl ) {            
+        bestFPSOvl = testFPS;
+        bestProbOvl = Math.abs(testProbOvl);
+      }
+    }
+    fillFFTPlot( frameTimes, maxFPS );
+    fillOverlapPlot( frameTimes, maxFPS );
+
+    // Calculate required and measured significance
+    let maxErrorFPS = 0.5 / video.duration; // Minimal required accuracy
+    let errorFPS = maxFPS * stepSize / video.duration; // actual accuracy
+    let decimals = Math.max(0,Math.floor( Math.log10(6.0 / errorFPS ) ));;
+    console.log("Uncertainty on FPS = " + errorFPS.toFixed(decimals) + 
+                " (required uncertainty= "+ maxErrorFPS.toFixed(decimals) + ")" );
+          
+    // Calculate simple FPS (ignore last entry)
+    simpleFPS = ( (frameTimes.length-2)/frameTimes[frameTimes.length-2]);
+          
+    fpsStatusMsg.innerHTML = 
+      "Interval: " + maxFPS.toFixed(3) + " (sign. " + maxFPS.toFixed(decimals) +
+      "), simple: " + simpleFPS.toFixed(3) +
+      ", FFT: " + bestFPSFFT.toFixed(1) + ", Ovl: " + bestFPSOvl.toFixed(1) ;
+    console.log("Best FPS Int = " + maxFPS);
+    console.log("Best FPS FFT = " + bestFPSFFT);
+    console.log("Best FPS Ovl = " + bestFPSOvl);
+    console.log("Best FPS Smp = " + simpleFPS);
+
+    fpsButton.innerText = 'Auto';
+    // Set the new FPS
+    fpsInput.value = maxFPS.toFixed(decimals);
+    fpsInput.onchange();
+  } // end analyseFrameTimes
+
 
   // TODO: maybe make frameTimes integer (unit of ms)
   function calculateProbFPS(frameTimes, testFPS, stepSize) {
@@ -270,7 +312,7 @@
     return prob / nSteps;
   }
   
-    // TODO: maybe make frameTimes integer (unit of ms)
+  // TODO: maybe make frameTimes integer (unit of ms)
   function calculateOverlapFPS(frameTimes, testFPS, stepSize) {
 
     let amplitude = 0.0;
@@ -378,7 +420,7 @@
         maxValue = fpsValues[thisFPS];
       }
     }
-    console.log(fpsValues);
+    //console.log(fpsValues);
     //fpsData = [];
     //fpsValues.forEach(function (item, index) { fpsData.push( {x: index+1, y: item} ); });
     //console.log(fpsData);
