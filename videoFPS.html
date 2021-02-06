@@ -1,13 +1,6 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!--style>
-      video,
-input {
-  display: none;
-}
-    </style-->
-<!--link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"-->
 <style>
 html, body {
   height: 100%;
@@ -39,7 +32,11 @@ html, body {
 <body>
 
 <h1>HTML5 local video file player example</h1>
-  <div class="control"><button id="fps">FPS</button><nobr id="fpsWaiting"></nobr></div>
+  
+  <div class="control">Frame rate (fps): 
+    <input id="fpsInput" type="number" min="0.1" step="0.1" max="1000" style="width:60px"></input>
+    <button id="fpsButton">Auto</button><nobr id="fpsWaiting"></nobr>
+  </div> 
 
   <div class="control">
     <button id="prev" disabled>prev</button>
@@ -51,16 +48,13 @@ html, body {
 
   <div class="content">
     <div class="left">
-      <video id="videoInput" hidden muted></video>        
+      <video id="video" hidden muted></video>        
       <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas>
-
-  </div>
-<div class="right">
-  <canvas id="fpsChart" style="border:1px solid #ccc" width="400" height="350"></canvas>
-
-  <canvas id="fftChart" style="border:1px solid #ccc" width="400" height="350"></canvas>
-
-  </div>
+    </div>
+    <div class="right">
+      <canvas id="fpsChart" style="border:1px solid #ccc" width="400" height="350"></canvas>
+      <canvas id="fftChart" style="border:1px solid #ccc" width="400" height="350"></canvas>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>

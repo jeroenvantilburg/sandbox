@@ -7,66 +7,69 @@
 /* ========== GLOBAL SECTION =================
    Global variables are defined here
    =========================================== */
-  let streaming = false;
-  let videoInput = document.getElementById('videoInput');
-  let startAndStopAuto = document.getElementById('startAndStopAuto');
-  let startAndStopManual = document.getElementById('startAndStopManual');
+
+  // HTML elements
+  let video      = document.getElementById('video');
+  let fpsInput   = document.getElementById('fpsInput');
+  let fpsButton = document.getElementById('fpsButton');
   let prevButton = document.getElementById('prev');
   let playButton = document.getElementById('play');
   let nextButton = document.getElementById('next');
   let slider     = document.getElementById('slider');
-
   let canvasOutput = document.getElementById('canvasOutput');
   let canvasContext = canvasOutput.getContext('2d');
     
-  var width = 0;
-  var height = 0;
-
-  let integrationTime = 1;
-  let rawData = [];
+  // Global video parameters
+  let width = 0;
+  let height = 0;
   let frameNumber = 0;
+  let FPS = 0;
 
-  //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
-  //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
-  videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";
-  let FPS = 26.6667;
-  
-  //let prevImageData;
+  //video.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
+  //video.src = "file:///Users/jeroen/Downloads/time.mp4";
+  video.src = "file:///Users/jeroen/Downloads/cup.mp4";
   
   // Add event listener when the video is loaded
-  let videoReady = false;
-  videoInput.addEventListener('canplay', () => {
-    videoReady = true;
+  video.addEventListener('canplay', () => {
+    // Get the dimensions of the video and prepare the canvas
+    width = video.videoWidth;
+    height = video.videoHeight;
+    canvasOutput.width = width;
+    canvasOutput.height = height;
+    canvasContext.drawImage(video,0,0, width, height );
+
+    console.log("Resolution: " + width.toString() + " x " + height.toString() );
+    console.log("Duration: " + video.duration );
+    
+  });
+  
+  // Update the frame rate (fps) when user give input or when calculated
+  fpsInput.onchange = function() {
+    if( this.value > 0 ) {
+      FPS = this.value;
+      slider.max = Math.floor( video.duration * FPS);
+    
+      // Always reset to first frame
+      gotoFrame( 0 );
+    
+      enableVideoControl();
+    }
+  }
+  
+  // Enable the video control buttons
+  function enableVideoControl() {
     prevButton.removeAttribute('disabled');
     playButton.removeAttribute('disabled');
     nextButton.removeAttribute('disabled');
     slider.removeAttribute('disabled');  
-    slider.max = Math.floor( videoInput.duration * FPS) ;
-
-    width = videoInput.videoWidth;
-    height = videoInput.videoHeight;
-    // Set time to halfway first frame
-    videoInput.currentTime = 0.5/FPS;
-
-    canvasOutput.width = width;
-    canvasOutput.height = height;
-    canvasContext.drawImage(videoInput,0,0, width, height );
-    console.log("Resolution: " + width.toString() + " x " + height.toString() );
-    console.log("Duration: " + videoInput.duration );
-
-    
-    //prevImageData = canvasContext.getImageData(0, 0, width, height).data;
-    
-
-  });
+  }
   
   // Calculate the frame rate (fps)
-  let fpsButton = document.getElementById('fps');
   fpsButton.onclick = () => getFPS();
   function getFPS() {
     let statusIntervalID=0;
-    if ( fpsButton.innerText === 'FPS' ) {
-      fpsButton.innerText = 'Interrupt';
+    if ( fpsButton.innerText === 'Auto' ) {
+      fpsButton.innerText = 'Abort';
     console.log("Calculating FPS");
     document.getElementById("fpsWaiting").innerHTML = "Calculating FPS...";
 
@@ -76,8 +79,7 @@
 
     let prevImageData;// = canvasContext.getImageData(0, 0, width, height).data;
 
-    //console.log(videoInput.seekable);
-    videoInput.currentTime = 0.0 ;
+    video.currentTime = 0.0 ;
     //for( let i=0; i < 10; ++i ) {
     let frameTimes = [0.0];
     let iStep=0;
@@ -87,19 +89,15 @@
     let nPeriods = 0; // number of periods used in average
 
     statusIntervalID = window.setInterval( function() { 
-      fractionDone = iStep*stepSize / videoInput.duration ;
+      fractionDone = iStep*stepSize / video.duration ;
       document.getElementById("fpsWaiting").innerHTML = "Calculating FPS... "+ 
         (fractionDone*100).toFixed(1)+"% done";
       }, 1000 );
 
     function compareFrames() {
-      videoInput.addEventListener("seeked", function(e) {
+      video.addEventListener("seeked", function(e) {
         e.target.removeEventListener(e.type, arguments.callee);
-        //let width2 = 100;
-        //let height2= 100;
-        //canvasContext.drawImage(videoInput,0,0,width,height);//, 0,0,width2, height2 );
-        //let imageData = canvasContext.getImageData(0, 0, width, height);
-        ctx.drawImage(videoInput,0,0, width, height);//, 0,0,width2, height2 );
+        ctx.drawImage(video,0,0, width, height);//, 0,0,width2, height2 );
         let imageData = ctx.getImageData(0, 0, width, height);
       
         let sameFrame = true;
@@ -115,11 +113,11 @@
             if( px[i] != prevImageData[i] ) {
               sameFrame = false;
               // Only add frame time when not skipped steps
-              if( skipped < 2 ) frameTimes.push(videoInput.currentTime);
+              if( skipped < 2 ) frameTimes.push(video.currentTime);
               break;
             }
           }
-          //if( !sameFrame ) console.log("t = "+videoInput.currentTime + ",  " + i + " " + sameFrame  );
+          //if( !sameFrame ) console.log("t = "+video.currentTime + ",  " + i + " " + sameFrame  );
         } else {
           // Store previous image in data buffer for the first step
           prevImageData = px.slice();          
@@ -145,19 +143,19 @@
           }
         }
         iStep += skipped;
-        videoInput.currentTime = 0.0 + iStep*stepSize;
+        video.currentTime = 0.0 + iStep*stepSize;
         console.log("Step = " + iStep);
 
         
         // Recursively load the next frame
-        if( videoInput.currentTime < videoInput.duration && fpsButton.innerText === 'Interrupt') {
+        if( video.currentTime < video.duration && fpsButton.innerText === 'Abort') {
           compareFrames();
         } else {
           window.clearInterval( statusIntervalID );    
           // Reset to first frame
           //gotoFrame( 0 );
           // Add final time
-          frameTimes.push(videoInput.currentTime)
+          frameTimes.push(video.currentTime)
           frameTimes.forEach( (frameTime,index) => {
             console.log("t = " + frameTime + " " + index/frameTime);  
           } );
@@ -202,8 +200,13 @@
           fillFFTPlot( frameTimes, maxFPS );
           fillOverlapPlot( frameTimes, maxFPS );
 
-          // Calculate significance
-          let decimals = Math.max(0,Math.floor( Math.log10(12.0 *videoInput.duration ) ));
+          // Calculate required and measured significance
+          let maxErrorFPS = 0.5 / video.duration; // Minimal required accuracy
+          let errorFPS = maxFPS * stepSize / video.duration; // actual accuracy
+          let decimals = Math.max(0,Math.floor( Math.log10(6.0 / errorFPS ) ));;
+          //let decimals = Math.max(0,Math.floor( Math.log10( 6.0/maxErrorFPS ) ));
+          console.log("Uncertainty on FPS = " + errorFPS + 
+                      " (required uncertainty= "+ maxErrorFPS + ")" );
           
           // Calculate simple FPS (ignore last entry)
           simpleFPS = ( (frameTimes.length-2)/frameTimes[frameTimes.length-2]);
@@ -217,15 +220,16 @@
           console.log("Best FPS Ovl = " + bestFPSOvl);
           console.log("Best FPS Smp = " + simpleFPS);
 
-          fpsButton.innerText = 'FPS';
+          fpsButton.innerText = 'Auto';
           // Set the new FPS
-          FPS = bestFPSFFT;
+          fpsInput.value = maxFPS.toFixed(decimals);
+          fpsInput.onchange();
         }
       });
     }
     compareFrames();
     } else {
-      fpsButton.innerText = 'FPS';
+      fpsButton.innerText = 'Auto';
       window.clearInterval( statusIntervalID );    
     }
     
@@ -333,15 +337,15 @@
     console.log(newTime);
     if( newTime < 0.0 ) {
       return false;
-    } else if( newTime > videoInput.duration ) {
+    } else if( newTime > video.duration ) {
       return false;
     } else {
       frameNumber = targetFrame;
-      videoInput.currentTime = newTime;
-      videoInput.addEventListener("seeked", function(e) {
+      video.currentTime = newTime;
+      video.addEventListener("seeked", function(e) {
         e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
-        canvasContext.drawImage(videoInput,0,0, width, height );
-        document.getElementById("frameNumber").innerHTML = frameNumber.toString();
+        canvasContext.drawImage(video,0,0, width, height );
+        document.getElementById("frameNumber").innerHTML = frameNumber + " / " +slider.max;
         slider.value = frameNumber;
       });
       return true;
