@@ -12,6 +12,7 @@
   let video      = document.getElementById('video');
   let fpsInput   = document.getElementById('fpsInput');
   let fpsButton = document.getElementById('fpsButton');
+  let fpsStatusMsg = document.getElementById("fpsWaiting");
   let prevButton = document.getElementById('prev');
   let playButton = document.getElementById('play');
   let nextButton = document.getElementById('next');
@@ -64,35 +65,50 @@
     slider.removeAttribute('disabled');  
   }
   
-  // Calculate the frame rate (fps)
-  fpsButton.onclick = () => getFPS();
-  function getFPS() {
-    let statusIntervalID=0;
+  // Display the status message when calculating FPS
+  function displayStatus(fractionDone) {
+    fpsStatusMsg.innerHTML = "Calculating FPS... "+ (fractionDone*100).toFixed(1)+"% done";    
+  }
+  
+  // When pressing button start calculating frame rate
+  fpsButton.onclick = function() {
     if ( fpsButton.innerText === 'Auto' ) {
       fpsButton.innerText = 'Abort';
+      getFPS( displayStatus );
+    } else {
+      fpsButton.innerText = 'Auto';
+    }
+  }
+  
+  // Calculate the frame rate (fps)
+  function getFPS( callbackStatus = function(){} ) {
     console.log("Calculating FPS");
-    document.getElementById("fpsWaiting").innerHTML = "Calculating FPS...";
-
     
+    // Settings
+    const stepSize = 0.001; // settings
+
+    // Dummy canvas to place video images
     const canvasFPS = document.createElement('canvas');
     let ctx = canvasFPS.getContext('2d');
 
-    let prevImageData;// = canvasContext.getImageData(0, 0, width, height).data;
-
+    // Reset video 
     video.currentTime = 0.0 ;
+    
+    // Setup status callback every second
+    callbackStatus(0.0);
+    let statusIntervalID = window.setInterval( function() { 
+      let fractionDone = video.currentTime / video.duration ;
+      callbackStatus( fractionDone );
+    }, 1000 );
+    
     //for( let i=0; i < 10; ++i ) {
+    // Setup initial values
+    let prevImageData;
     let frameTimes = [0.0];
     let iStep=0;
-    let stepSize = 0.001;
     let skipped = 1;
     let period = 0.0; // keep track of the average period
     let nPeriods = 0; // number of periods used in average
-
-    statusIntervalID = window.setInterval( function() { 
-      fractionDone = iStep*stepSize / video.duration ;
-      document.getElementById("fpsWaiting").innerHTML = "Calculating FPS... "+ 
-        (fractionDone*100).toFixed(1)+"% done";
-      }, 1000 );
 
     function compareFrames() {
       video.addEventListener("seeked", function(e) {
@@ -104,7 +120,6 @@
     
         let px = imageData.data;
         //console.log("px = " + px.length.toString());
-        //console.log(px[10].toString() + "  " + prevImageData[10]);
 
         let i=0;
         if( prevImageData !== undefined ) {
@@ -139,12 +154,12 @@
             skipped = Math.ceil( (period/stepSize).toFixed(1) ) - 2;
             // Store previous image in data buffer
             prevImageData = px.slice();
-            console.log("Skipping "+skipped + " steps with period = " + period );
+            //console.log("Skipping "+skipped + " steps with period = " + period );
           }
         }
         iStep += skipped;
         video.currentTime = 0.0 + iStep*stepSize;
-        console.log("Step = " + iStep);
+        //console.log("Step = " + iStep);
 
         
         // Recursively load the next frame
@@ -156,9 +171,9 @@
           //gotoFrame( 0 );
           // Add final time
           frameTimes.push(video.currentTime)
-          frameTimes.forEach( (frameTime,index) => {
-            console.log("t = " + frameTime + " " + index/frameTime);  
-          } );
+          //frameTimes.forEach( (frameTime,index) => {
+          //  console.log("t = " + frameTime + " " + index/frameTime);  
+          //} );
           //console.log(frameTimes);
           
           let maxFPS = fillFPSPlot( frameTimes );
@@ -211,7 +226,7 @@
           // Calculate simple FPS (ignore last entry)
           simpleFPS = ( (frameTimes.length-2)/frameTimes[frameTimes.length-2]);
           
-          document.getElementById("fpsWaiting").innerHTML = 
+          fpsStatusMsg.innerHTML = 
             "Interval: " + maxFPS.toFixed(3) + " (sign. " + maxFPS.toFixed(decimals) +
             "), simple: " + simpleFPS.toFixed(3) +
             ", FFT: " + bestFPSFFT.toFixed(1) + ", Ovl: " + bestFPSOvl.toFixed(1) ;
@@ -227,12 +242,7 @@
         }
       });
     }
-    compareFrames();
-    } else {
-      fpsButton.innerText = 'Auto';
-      window.clearInterval( statusIntervalID );    
-    }
-    
+    compareFrames();    
   }
 
   // TODO: maybe make frameTimes integer (unit of ms)
