@@ -86,6 +86,7 @@
     frameCounter.innerHTML = 0;
     frameNumber = 0;
     FPS = 0;
+    fpsButton.removeAttribute("disabled");
   }, false);
   
   // Update the frame rate (fps) when user gives input or when calculated
