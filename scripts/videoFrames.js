@@ -66,7 +66,8 @@
   
   // Add event listener when the video is loaded
   // TODO: in chrome this is executed for every step!!!!
-  video.addEventListener('canplay', () => {
+  //video.addEventListener('canplay', () => {
+  video.addEventListener('loadedmetadata', () => {
     // Get the dimensions of the video and prepare the canvas
     width = video.videoWidth;
     height = video.videoHeight;
