@@ -65,6 +65,7 @@
   //video.src = "file:///Users/jeroen/Downloads/cup.mp4";
   
   // Add event listener when the video is loaded
+  // TODO: in chrome this is executed for every step!!!!
   video.addEventListener('canplay', () => {
     // Get the dimensions of the video and prepare the canvas
     width = video.videoWidth;
@@ -212,9 +213,9 @@
     // Add final time
     frameTimes.push(video.currentTime)
     
-    //frameTimes.forEach( (frameTime,index) => {
-    //  console.log("t = " + frameTime + " " + index/frameTime);  
-    //} );              
+    frameTimes.forEach( (frameTime,index) => {
+      console.log("t = " + frameTime + " " + index/frameTime);  
+    } );              
     //analyseFrameTimes( frameTimes );
     
     return frameTimes;
