@@ -41,8 +41,9 @@
 
   // HTML elements
   let video      = document.getElementById('video');
+  let videoInput = document.getElementById('videoInput');
   let fpsInput   = document.getElementById('fpsInput');
-  let fpsButton = document.getElementById('fpsButton');
+  let fpsButton  = document.getElementById('fpsButton');
   let fpsStatusMsg = document.getElementById("fpsWaiting");
   let prevButton = document.getElementById('prev');
   let playButton = document.getElementById('play');
@@ -50,6 +51,7 @@
   let slider     = document.getElementById('slider');
   let canvasOutput = document.getElementById('canvasOutput');
   let canvasContext = canvasOutput.getContext('2d');
+  let frameCounter= document.getElementById("frameNumber")
     
    // Settings
   const stepSize = 0.001; // size of time step
@@ -65,8 +67,6 @@
   //video.src = "file:///Users/jeroen/Downloads/cup.mp4";
   
   // Add event listener when the video is loaded
-  // TODO: in chrome this is executed for every step!!!!
-  //video.addEventListener('canplay', () => {
   video.addEventListener('loadedmetadata', () => {
     // Get the dimensions of the video and prepare the canvas
     width = video.videoWidth;
@@ -79,6 +79,14 @@
     console.log("Duration: " + video.duration );
     
   });
+
+  // Disable video control and reset video parameters when selecting new video
+  videoInput.addEventListener('change', function() {
+    disableVideoControl();
+    frameCounter.innerHTML = 0;
+    frameNumber = 0;
+    FPS = 0;
+  }, false);
   
   // Update the frame rate (fps) when user gives input or when calculated
   fpsInput.onchange = function() {
@@ -101,7 +109,15 @@
     nextButton.removeAttribute('disabled');
     slider.removeAttribute('disabled');  
   }
-  
+
+  // Disable the video control buttons
+  function disableVideoControl() {
+    prevButton.setAttribute('disabled', '');
+    playButton.setAttribute('disabled', '');
+    nextButton.setAttribute('disabled', '');
+    slider.setAttribute('disabled', '');  
+  }
+
   // Display the status message when calculating FPS
   function displayStatus(fractionDone) {
     fpsStatusMsg.innerHTML = "Calculating FPS... "+ (fractionDone*100).toFixed(1)+"% done";    
@@ -214,9 +230,9 @@
     // Add final time
     frameTimes.push(video.currentTime)
     
-    frameTimes.forEach( (frameTime,index) => {
-      console.log("t = " + frameTime + " " + index/frameTime);  
-    } );              
+    //frameTimes.forEach( (frameTime,index) => {
+    //  console.log("t = " + frameTime + " " + index/frameTime);  
+    //} );              
     //analyseFrameTimes( frameTimes );
     
     return frameTimes;
@@ -233,7 +249,7 @@
     let nIntervals = 0;
     for( ; i<frameTimes.length-1; ++i ) {
       let dt = frameTimes[i]-frameTimes[i-1];
-      //console.log("dt= " + dt);
+      console.log("t = " + frameTimes[i] + ", dt= " + dt.toFixed(3) + ",  FPS = " + (1/dt).toFixed(1) );
       if( Math.abs(1/dt-maxFPS) < 200.0*stepSize*maxFPS ) { 
         //console.log("Tot hier")
         totalDt += dt;
@@ -399,7 +415,7 @@
       video.addEventListener("seeked", function(e) {
         e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
         canvasContext.drawImage(video,0,0, width, height );
-        document.getElementById("frameNumber").innerHTML = frameNumber + " / " +slider.max;
+        frameCounter.innerHTML = frameNumber + " / " +slider.max;
         slider.value = frameNumber;
       });
       return true;
