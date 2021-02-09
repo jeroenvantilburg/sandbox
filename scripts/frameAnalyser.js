@@ -31,6 +31,7 @@ var FrameAnalyser = (function() {
     let prevImageData;
     let frameTimes = [0.0];
     let iStep=0;
+    let rStep=0;
     let skipped = 1;
     let period = 0.0; // keep track of the average period
     let nPeriods = 0; // number of periods used in average
@@ -64,7 +65,7 @@ var FrameAnalyser = (function() {
           if( px[i] != prevImageData[i] ) {
             sameFrame = false;
             // Only add frame time when not skipped steps
-            if( skipped < 2 ) frameTimes.push(video.currentTime);
+            //if( skipped < 2 ) frameTimes.push(video.currentTime);
             break;
           }
         }
@@ -73,22 +74,40 @@ var FrameAnalyser = (function() {
       
       // Determine how many steps can be skipped
       if( sameFrame ) {
-        skipped = 1;
+        if( nPeriods === 0 ) { // speed-up finding first frame
+          if( rStep === 0 ) {
+            skipped = 16; // first guess 60 fps (transition between 16-17 ms)
+          } else if (rStep === 17 ) {
+            skipped = 19-17; // second guess 50 fps (transition between 19-20 ms)
+          } else if (rStep === 20 ) {
+            skipped = 33-20; // third guess 30 fps (transition between 33-34 ms)
+          } else if (rStep === 34 ) {
+            skipped = 39-34; // fourth guess 25 fps (transition between 39-40 ms)
+          } else if (rStep > 44 ) {
+            skipped = 10; // still not found skip 10
+          } else {
+            skipped = 1;
+          }
+        } else {
+          skipped = 1;
+        }
       } else { // TODO: maybe move this part up to line: if skipped < 2
         if( skipped > 1 ) {
           skipped = -skipped+1; // Go back
           // Reset period calculation
           period = 0.0;
           nPeriods = 0;
-          //console.log("Going back " + (-skipped) + " steps, reseting period.")
+          console.log("Going back " + (-skipped) + " steps, reseting period.")
         } else {
+          frameTimes.push(video.currentTime); // Add frame time
           let prevPeriod = frameTimes[frameTimes.length-1]-frameTimes[frameTimes.length-2];
           period = (period * nPeriods + prevPeriod)/(nPeriods+1);
           ++nPeriods;
           skipped = Math.ceil( (period/stepSize).toFixed(1) ) - 2;
           // Store previous image in data buffer
           prevImageData = px.slice();
-          //console.log("Skipping "+skipped + " steps with period = " + period );
+          rStep = 0; // reset relative step 
+          console.log("Skipping "+skipped + " steps with period = " + period );
         }
       }
 
@@ -99,8 +118,9 @@ var FrameAnalyser = (function() {
 
       // Set the next step and the new video time (triggers video.seeked)
       iStep += skipped;
+      rStep += skipped;
       video.currentTime = 0.0 + iStep*stepSize;
-      //console.log("Step = " + iStep + " time = " + video.currentTime);
+      console.log("Step = " + iStep + ", time = " + video.currentTime);
     } // end while loop
     
     window.clearInterval( statusIntervalID );    
