@@ -31,6 +31,7 @@
   let height = 0;
   let frameNumber = 0;
   let FPS = 0;
+  let t0 = 0.0;
 
   //video.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
   //video.src = "file:///Users/jeroen/Downloads/time.mp4";
@@ -77,7 +78,7 @@
     if( this.value > 0 ) {
       FPS = this.value;
       //console.log("FPS = " + FPS + " duration = " + video.duration + " *= " + video.duration * FPS );
-      slider.max = Math.floor( (video.duration * FPS).toFixed(1) ) - 1;
+      slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
     
       // Always reset to first frame
       gotoFrame( 0 );
@@ -145,6 +146,10 @@
                     " (required uncertainty= "+ minErrorFPS.toFixed(decimals) + ")" );    
 
         analyseFrameTimes( frameTimes );
+        
+        // Set the t0
+        t0 = Math.max(0.0, (frameTimes[1] - 1.0/maxFPS));
+        console.log("t0 = " + t0);
             
         // Set the new FPS
         fpsInput.value = maxFPS.toFixed(decimals);
@@ -291,13 +296,13 @@
   }
 
   function getTime(targetFrame) {
-    return (targetFrame + 0.5)/FPS;
+    return t0 + (targetFrame + 0.5)/FPS;
   }
 
   function gotoFrame(targetFrame) {
-    let newTime = (targetFrame + 0.5)/FPS;
+    let newTime = getTime(targetFrame);
     console.log(newTime);
-    if( newTime < 0.0 ) {
+    if( newTime < t0 ) {
       return false;
     } else if( newTime > video.duration ) {
       return false;

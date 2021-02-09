@@ -30,7 +30,7 @@ var FrameAnalyser = (function() {
     let nPeriods = 0; // number of periods used in average
     let minPrecisionReached = false;
     
-        // Setup status callback every second
+    // Setup status callback every second
     callbackStatus(0.0);
     let statusIntervalID = window.setInterval( function() { 
       let fractionDone = video.currentTime / video.duration ;
@@ -134,10 +134,7 @@ var FrameAnalyser = (function() {
 
   // Get the frame rate from the frame transition times
   function getFPS( frameTimes, stepSize = 0.001 ) {
-          
-    // TODO: fix this
-    let videoduration = 20.0;
-    
+        
     // Bin the interval-times in millisecond steps and find the bin with the largest occupancy
     let dtValues = Array(1001).fill(0);
     let mpvDt = 1;
