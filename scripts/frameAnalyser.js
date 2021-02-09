@@ -19,14 +19,7 @@ var FrameAnalyser = (function() {
 
     // Reset video 
     video.currentTime = 0.0 ;
-    
-    // Setup status callback every second
-    callbackStatus(0.0);
-    let statusIntervalID = window.setInterval( function() { 
-      let fractionDone = video.currentTime / video.duration ;
-      callbackStatus( fractionDone );
-    }, 1000 );
-    
+        
     // Setup initial values
     let prevImageData;
     let frameTimes = [0.0];
@@ -36,6 +29,15 @@ var FrameAnalyser = (function() {
     let period = 0.0; // keep track of the average period
     let nPeriods = 0; // number of periods used in average
     let minPrecisionReached = false;
+    
+        // Setup status callback every second
+    callbackStatus(0.0);
+    let statusIntervalID = window.setInterval( function() { 
+      let fractionDone = video.currentTime / video.duration ;
+      if( quickScan && nPeriods > 1 ) fractionDone *= 0.5 * period / stepSize;
+      callbackStatus( fractionDone );
+    }, 1000 );
+
         
     // Loop over the video in small steps
     while( video.currentTime < video.duration && !abortCallback() && !minPrecisionReached ) {
@@ -75,23 +77,23 @@ var FrameAnalyser = (function() {
       // Determine how many steps can be skipped
       if( sameFrame ) {
         if( nPeriods === 0 ) { // speed-up finding first frame
-          if( rStep === 0 ) {
-            skipped = 16; // first guess 60 fps (transition between 16-17 ms)
+          if( rStep === 0 || rStep === 1) {
+            skipped = 16-rStep; // first guess 60 fps (transition between 16-17 ms)
           } else if (rStep === 17 ) {
-            skipped = 19-17; // second guess 50 fps (transition between 19-20 ms)
+            skipped = 19-rStep; // second guess 50 fps (transition between 19-20 ms)
           } else if (rStep === 20 ) {
-            skipped = 33-20; // third guess 30 fps (transition between 33-34 ms)
+            skipped = 33-rStep; // third guess 30 fps (transition between 33-34 ms)
           } else if (rStep === 34 ) {
-            skipped = 39-34; // fourth guess 25 fps (transition between 39-40 ms)
-          } else if (rStep > 44 ) {
-            skipped = 10; // still not found skip 10
+            skipped = 39-rStep; // fourth guess 25 fps (transition between 39-40 ms)
+          } else if (rStep > 44 && (rStep-5)%10 === 0 ) {
+            skipped = 10; // still not found skip 10 ms
           } else {
             skipped = 1;
           }
         } else {
           skipped = 1;
         }
-      } else { // TODO: maybe move this part up to line: if skipped < 2
+      } else {
         if( skipped > 1 ) {
           skipped = -skipped+1; // Go back
           // Reset period calculation
@@ -112,8 +114,8 @@ var FrameAnalyser = (function() {
       }
 
       // Determine if minimum precision is reached
-      if( quickScan && nPeriods > 10 ) {
-        minPrecisionReached = (video.currentTime < 2*video.duration*stepSize/period );
+      if( quickScan && nPeriods > 2 ) {
+        minPrecisionReached = (video.currentTime > 2*video.duration*stepSize/period );
       }
 
       // Set the next step and the new video time (triggers video.seeked)
