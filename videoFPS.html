@@ -35,10 +35,13 @@ html, body {
 
 <h1>HTML5 local video file player example</h1>
   
-      <input id="videoInput" type="file" accept="video/*"/>
+  <input id="videoInput" type="file" accept="video/*"/>
   <div class="control">Frame rate (fps): 
-    <input id="fpsInput" type="number" min="0.1" step="0.1" max="1000" style="width:60px"></input>
-    <button id="fpsButton" disabled>Auto</button><nobr id="fpsWaiting"></nobr>
+    <input id="fpsInput" type="number" min="0.1" step="0.1" max="1000" style="width:60px" disabled>
+    </input>
+    <button id="fpsButton" disabled>Scan</button>
+    <input id="quickScan" type="checkbox" disabled>Quick scan</input>&nbsp;&nbsp;
+    <nobr id="fpsWaiting"></nobr>
   </div> 
 
   <div class="control">
@@ -61,6 +64,7 @@ html, body {
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  <script src="scripts/frameAnalyser.js"></script>
   <script src="scripts/videoFrames.js"></script>
   
 </body>
