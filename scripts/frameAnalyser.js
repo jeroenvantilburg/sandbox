@@ -78,11 +78,11 @@ var FrameAnalyser = (function() {
       if( sameFrame ) {
         if( nPeriods === 0 ) { // speed-up finding first frame
           if( rStep === 0 || rStep === 1) {
-            skipped = 16-rStep; // first guess 60 fps (transition between 16-17 ms)
+            skipped = 15-rStep; // first guess 60 fps (transition between 16-17 ms)
           } else if (rStep === 17 ) {
             skipped = 19-rStep; // second guess 50 fps (transition between 19-20 ms)
           } else if (rStep === 20 ) {
-            skipped = 33-rStep; // third guess 30 fps (transition between 33-34 ms)
+            skipped = 32-rStep; // third guess 30 fps (transition between 33-34 ms)
           } else if (rStep === 34 ) {
             skipped = 39-rStep; // fourth guess 25 fps (transition between 39-40 ms)
           } else if (rStep > 44 && (rStep-5)%10 === 0 ) {
@@ -122,12 +122,12 @@ var FrameAnalyser = (function() {
       iStep += skipped;
       rStep += skipped;
       video.currentTime = 0.0 + iStep*stepSize;
-      console.log("Step = " + iStep + ", time = " + video.currentTime);
+      console.log("Step = " + iStep + ", rStep = "+ rStep + ", time = " + video.currentTime);
     } // end while loop
     
     window.clearInterval( statusIntervalID );    
-    // Add final time
-    frameTimes.push(video.currentTime)
+    // Add final time such that we know how long the video is
+    frameTimes.push(video.currentTime);
         
     return frameTimes;
   }
