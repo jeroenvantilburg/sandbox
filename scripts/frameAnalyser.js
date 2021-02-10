@@ -108,7 +108,7 @@ var FrameAnalyser = (function() {
           let prevPeriod = frameTimes[frameTimes.length-1]-frameTimes[frameTimes.length-2];
           period = (period * nPeriods + prevPeriod)/(nPeriods+1);
           ++nPeriods;
-          skipped = Math.ceil( (period*scanRate+0.01).toFixed(2) ) - 2;
+          skipped = Math.ceil( (period*scanRate+0.10).toFixed(2) ) - 2;
           // Store previous image in data buffer
           prevImageData = px.slice();
           rStep = 0; // reset relative step 
