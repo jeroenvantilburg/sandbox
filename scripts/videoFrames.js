@@ -22,10 +22,7 @@
   let canvasOutput = document.getElementById('canvasOutput');
   let canvasContext= canvasOutput.getContext('2d');
   let frameCounter = document.getElementById("frameNumber")
-    
-   // Settings
-  const stepSize = 0.001; // size of time step
-
+  
   // Global video parameters
   let width = 0;
   let height = 0;
@@ -133,9 +130,9 @@
       //isAborted.set(false);
       abort = false;
       let quickScan = quickButton.checked;
-      FrameAnalyser.getTimes( video, stepSize, quickScan,
+      FrameAnalyser.getTimes( video, quickScan,
                               displayStatus, isAborted ).then( function( frameTimes ){
-        let thisFPS = FrameAnalyser.getFPS( frameTimes, stepSize );
+        let thisFPS = FrameAnalyser.getFPS( frameTimes );
         let maxFPS = thisFPS.value;
         let errorFPS = thisFPS.error;
     
@@ -175,12 +172,12 @@
     //let fftData = [];
     for(let i=0; i<980; ++i) {
       let testFPS = 1 + i*0.1;
-      let testProbFFT = calculateProbFPS(frameTimes, testFPS, stepSize);
+      let testProbFFT = calculateProbFPS(frameTimes, testFPS);
       if( Math.abs(testProbFFT) > bestProbFFT ) {            
         bestFPSFFT = testFPS;
         bestProbFFT = Math.abs(testProbFFT);
       }
-      let testProbOvl = calculateOverlapFPS(frameTimes, testFPS, stepSize);
+      let testProbOvl = calculateOverlapFPS(frameTimes, testFPS);
       if( Math.abs(testProbOvl) > bestProbOvl ) {            
         bestFPSOvl = testFPS;
         bestProbOvl = Math.abs(testProbOvl);
@@ -202,8 +199,10 @@
   } // end analyseFrameTimes
 
 
-  // TODO: maybe make frameTimes integer (unit of ms)
-  function calculateProbFPS(frameTimes, testFPS, stepSize) {
+  // 
+  function calculateProbFPS(frameTimes, testFPS) {
+    const stepSize = 1.0/600.0;
+    
     // Get the number of steps from the maximum time in frameTimes
     let nSteps = Math.round(frameTimes[frameTimes.length-1] / stepSize);
     
@@ -211,7 +210,7 @@
     let amplitude = 1;
     let k=0, n=0, prob=0;
     for(let i=0; i < nSteps; ++i ) {
-      let t = frameTimes[0] + i*stepSize;    
+      let t = frameTimes[0] + (i+0.5)*stepSize;    
       if( t >= frameTimes[k] ) {
         amplitude *= -1;
         ++k;
@@ -227,8 +226,8 @@
     return prob / nSteps;
   }
   
-  // TODO: maybe make frameTimes integer (unit of ms)
-  function calculateOverlapFPS(frameTimes, testFPS, stepSize) {
+  // 
+  function calculateOverlapFPS(frameTimes, testFPS) {
 
     let amplitude = 0.0;
     frameTimes.forEach( (frameTime,index) => {
@@ -237,29 +236,6 @@
     } );
     let norm = Math.max(frameTimes.length-1, testFPS*frameTimes[frameTimes.length-1] );
     return amplitude/norm;
-
-
-    // Get the number of steps from the maximum time in frameTimes
-    /*let nSteps = Math.round(frameTimes[frameTimes.length-1] / stepSize);
-    
-    // Loop over the time and perform simple analysis
-    let overlaps = 0;
-    let k=0, n=0, prob=0;
-    for(let i=0; i < nSteps; ++i ) {
-      let t = frameTimes[0] + i*stepSize;
-      let frameChange = false;
-      let potential = 10
-      if( t >= n/testFPS) {
-        frameChange = true;
-        ++n ;              
-      }
-      if( t >= frameTimes[k] ) {
-        ++k;
-        if( frameChange ) overlaps += 1;
-      }
-    }
-    return overlaps / Math.max(k,n);
-    */
   }
 
 

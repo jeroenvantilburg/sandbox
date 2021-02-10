@@ -4,12 +4,15 @@
 // to avoid cluttering the global variables
 var FrameAnalyser = (function() {
 
+  // Global variable
+  const scanRate = 600; // fps
+
   // Calculate the frame rate (fps)
-  var getTimes = async function( video, stepSize = 0.001, quickScan = false,
+  var getTimes = async function( video, quickScan = false,
                                  callbackStatus = function(){}, 
                                  abortCallback = function(){return false;} ) {
     console.log("Calculating FPS");
-    
+        
     let width = video.videoWidth;
     let height = video.videoHeight;
     
@@ -18,7 +21,7 @@ var FrameAnalyser = (function() {
     let ctx = canvasFPS.getContext('2d');
 
     // Reset video 
-    video.currentTime = 0.0 ;
+    video.currentTime = 0.5/scanRate ;
         
     // Setup initial values
     let prevImageData;
@@ -34,7 +37,7 @@ var FrameAnalyser = (function() {
     callbackStatus(0.0);
     let statusIntervalID = window.setInterval( function() { 
       let fractionDone = video.currentTime / video.duration ;
-      if( quickScan && nPeriods > 1 ) fractionDone *= 0.5 * period / stepSize;
+      if( quickScan && nPeriods > 1 ) fractionDone *= 0.5 * period * scanRate;
       callbackStatus( fractionDone );
     }, 1000 );
 
@@ -66,8 +69,6 @@ var FrameAnalyser = (function() {
           //console.log(px[i] + "  " + prevImageData[i]);
           if( px[i] != prevImageData[i] ) {
             sameFrame = false;
-            // Only add frame time when not skipped steps
-            //if( skipped < 2 ) frameTimes.push(video.currentTime);
             break;
           }
         }
@@ -76,17 +77,19 @@ var FrameAnalyser = (function() {
       
       // Determine how many steps can be skipped
       if( sameFrame ) {
-        if( nPeriods === 0 ) { // speed-up finding first frame
+        // Speed-up finding of first frame or when relative step beyond expected period
+        // Hardcoded numbers: this only works at a scanRate of 600
+        if( nPeriods === 0 || rStep > period*scanRate+5 ) {
           if( rStep === 0 || rStep === 1) {
-            skipped = 15-rStep; // first guess 60 fps (transition between 16-17 ms)
-          } else if (rStep === 17 ) {
-            skipped = 19-rStep; // second guess 50 fps (transition between 19-20 ms)
+            skipped = 9-rStep; // first guess 60 or 50 fps (transition between 9-10 or 11-12)
+          } else if (rStep === 12 ) {
+            skipped = 19-rStep; // third guess 30 fps (transition between 19-20)
           } else if (rStep === 20 ) {
-            skipped = 32-rStep; // third guess 30 fps (transition between 33-34 ms)
-          } else if (rStep === 34 ) {
-            skipped = 39-rStep; // fourth guess 25 fps (transition between 39-40 ms)
-          } else if (rStep > 44 && (rStep-5)%10 === 0 ) {
-            skipped = 10; // still not found skip 10 ms
+            skipped = 23-rStep; // fourth guess 25 or 24 fps (transition between 23-24 or 24-25)
+          } else if (rStep > 99 && rStep%100 === 0 ) {
+            skipped = 100; // still not found skip 100
+          } else if (rStep > 29 && rStep%10 === 0 ) {
+            skipped = 10; // still not found skip 10
           } else {
             skipped = 1;
           }
@@ -101,11 +104,11 @@ var FrameAnalyser = (function() {
           nPeriods = 0;
           console.log("Going back " + (-skipped) + " steps, reseting period.")
         } else {
-          frameTimes.push(video.currentTime); // Add frame time
+          frameTimes.push(video.currentTime-0.5/scanRate); // Add frame time
           let prevPeriod = frameTimes[frameTimes.length-1]-frameTimes[frameTimes.length-2];
           period = (period * nPeriods + prevPeriod)/(nPeriods+1);
           ++nPeriods;
-          skipped = Math.ceil( (period/stepSize).toFixed(1) ) - 2;
+          skipped = Math.ceil( (period*scanRate+0.01).toFixed(2) ) - 2;
           // Store previous image in data buffer
           prevImageData = px.slice();
           rStep = 0; // reset relative step 
@@ -115,13 +118,13 @@ var FrameAnalyser = (function() {
 
       // Determine if minimum precision is reached
       if( quickScan && nPeriods > 2 ) {
-        minPrecisionReached = (video.currentTime > 2*video.duration*stepSize/period );
+        minPrecisionReached = (video.currentTime > 2*video.duration/(period*scanRate) );
       }
 
       // Set the next step and the new video time (triggers video.seeked)
       iStep += skipped;
       rStep += skipped;
-      video.currentTime = 0.0 + iStep*stepSize;
+      video.currentTime = (0.5 + iStep)/scanRate;
       console.log("Step = " + iStep + ", rStep = "+ rStep + ", time = " + video.currentTime);
     } // end while loop
     
@@ -133,10 +136,26 @@ var FrameAnalyser = (function() {
   }
 
   // Get the frame rate from the frame transition times
-  function getFPS( frameTimes, stepSize = 0.001 ) {
+  function getFPS( frameTimes ) {
         
+
     // Bin the interval-times in millisecond steps and find the bin with the largest occupancy
-    let dtValues = Array(1001).fill(0);
+    let fpsValues = Array(601).fill(0);
+    let bestFPS = 1;
+    let largestBin = 0;
+    for(let i = 1 ; i<frameTimes.length-1; ++i ) {
+      let thisFPS = Math.round(1.0/(frameTimes[i]-frameTimes[i-1]));
+      if( thisFPS > 600 ) continue;      
+      fpsValues[thisFPS] += 1;
+      if( fpsValues[thisFPS] > largestBin ) {
+        largestBin = fpsValues[thisFPS];
+        bestFPS = thisFPS;
+      }
+    }
+    console.log("Best FPS rough = " + bestFPS);
+
+    
+    /*let dtValues = Array(1001).fill(0);
     let mpvDt = 1;
     let largestBin = 0;
     for(let i = 1 ; i<frameTimes.length-1; ++i ) {
@@ -150,6 +169,9 @@ var FrameAnalyser = (function() {
     }
     let bestFPS = 1000.0/mpvDt;
     console.log("Best FPS rough = " + bestFPS);
+    */
+
+    
     
     // Get the best frame rate from the intervals by averaging around the best estimate
     let totalDt = 0;
@@ -157,7 +179,8 @@ var FrameAnalyser = (function() {
     for(let i=1; i<frameTimes.length-1; ++i ) {
       let dt = frameTimes[i]-frameTimes[i-1];
       console.log("t = " + frameTimes[i] + ", dt= " + dt.toFixed(3) + ",  FPS = " + (1/dt).toFixed(1) );
-      if( Math.abs(1/dt-bestFPS) < 200.0*stepSize*bestFPS ) { 
+      // Only average the intervals within 20% around the maximum
+      if( Math.abs(1/dt-bestFPS) < 0.20*bestFPS ) { 
         totalDt += dt;
         ++nIntervals;
       }
@@ -166,7 +189,7 @@ var FrameAnalyser = (function() {
     console.log("Best FPS fine = " + bestFPS);
 
     // Calculate the obtained accuracy
-    let errorFPS = bestFPS * stepSize / frameTimes[frameTimes.length-1]; // actual accuracy
+    let errorFPS = bestFPS / (scanRate * frameTimes[frameTimes.length-1]); // actual accuracy
     
     return {
       value : bestFPS,
