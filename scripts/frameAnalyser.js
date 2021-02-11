@@ -65,14 +65,17 @@ var FrameAnalyser = (function() {
       } else {
         // Compare this image with the one from the previous step
         let i=0;
+        //console.log(px[508640] + "  " + prevImageData[508640] + "  " + px.length + " " + prevImageData.length);
         for(; i < px.length; ++i ) {
-          //console.log(px[i] + "  " + prevImageData[i]);
-          if( px[i] != prevImageData[i] ) {
+          //if( rStep === 3300 && nPeriods === 1 && px[i] < 200 && px[i] !== 0 ) console.log(px[i] + "  " + prevImageData[i]);
+          if( px[i] !== prevImageData[i] ) {
             sameFrame = false;
             break;
           }
         }
         //if( !sameFrame ) console.log("t = "+video.currentTime + ",  " + i + " " + sameFrame  );
+        //if( !sameFrame ) console.log(px[i] + "  " + prevImageData[i]);
+
       }
       
       // Determine how many steps can be skipped
@@ -102,7 +105,7 @@ var FrameAnalyser = (function() {
           // Reset period calculation
           period = 0.0;
           nPeriods = 0;
-          console.log("Going back " + (-skipped) + " steps, reseting period.")
+          //console.log("Going back " + (-skipped) + " steps, reseting period.")
         } else {
           frameTimes.push(video.currentTime-0.5/scanRate); // Add frame time
           let prevPeriod = frameTimes[frameTimes.length-1]-frameTimes[frameTimes.length-2];
@@ -111,8 +114,9 @@ var FrameAnalyser = (function() {
           skipped = Math.ceil( (period*scanRate+0.10).toFixed(2) ) - 2;
           // Store previous image in data buffer
           prevImageData = px.slice();
+          //prevImageData = { ...px };
           rStep = 0; // reset relative step 
-          console.log("Skipping "+skipped + " steps with period = " + period );
+          //console.log("Skipping "+skipped + " steps with period = " + period );
         }
       }
 
@@ -125,7 +129,7 @@ var FrameAnalyser = (function() {
       iStep += skipped;
       rStep += skipped;
       video.currentTime = (0.5 + iStep)/scanRate;
-      console.log("Step = " + iStep + ", rStep = "+ rStep + ", time = " + video.currentTime);
+      //console.log("Step = " + iStep + ", rStep = "+ rStep + ", time = " + video.currentTime);
     } // end while loop
     
     window.clearInterval( statusIntervalID );    
@@ -153,24 +157,6 @@ var FrameAnalyser = (function() {
       }
     }
     console.log("Best FPS rough = " + bestFPS);
-
-    
-    /*let dtValues = Array(1001).fill(0);
-    let mpvDt = 1;
-    let largestBin = 0;
-    for(let i = 1 ; i<frameTimes.length-1; ++i ) {
-      let dt = Math.round((frameTimes[i]-frameTimes[i-1])*1000);
-      if( dt > 1000 ) continue;      
-      dtValues[dt] += 1;
-      if( dtValues[dt] > largestBin ) {
-        largestBin = dtValues[dt];
-        mpvDt = dt;
-      }
-    }
-    let bestFPS = 1000.0/mpvDt;
-    console.log("Best FPS rough = " + bestFPS);
-    */
-
     
     
     // Get the best frame rate from the intervals by averaging around the best estimate
