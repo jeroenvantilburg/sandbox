@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Video Motion Tracker</title>
+  <meta charset="UTF-8">
+<style>
+html, body {
+  height: 100%;
+  /*overflow: hidden;*/
+  margin: 0;
+}
+.content {
+  height: 100%;
+}
+.left {
+  float: left;
+  width: 70%;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 0.5em;
+}
+.right {
+  float: left;
+  width: 30%;
+  background: white;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 0.5em;
+}
+    </style>
+  </head>  
+<body>
+
+<h1>Video Motion Tracker</h1>
+
+  <input id="videoInput" type="file" accept="video/*" disabled/>
+  <div class="control">Frame rate (fps): 
+    <input id="fpsInput" type="number" min="0.1" step="0.1" max="1000" style="width:60px" disabled>
+    </input>
+    <button id="fpsButton" disabled>Scan</button>&nbsp;&nbsp;<nobr id="fpsWaiting"></nobr>
+  </div> 
+
+  <div class="control">
+    <button id="startAndStopAuto" disabled>Automatic</button>
+    <button id="startAndStopManual" disabled>Manual</button>
+  </div>
+
+  <div class="control">
+    <button id="prev" disabled>prev</button>
+    <button id="play" disabled>play</button>
+    <button id="next" disabled>next</button>
+    <input id="slider" type="range" min="0" max="100" step=1 value="0" disabled>
+    Frame: <nobr id="frameNumber">0</nobr>
+  </div>
+
+  <div class="content">
+    <div class="left">
+      <video id="video" hidden muted></video>        
+      <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas>
+    </div>
+    <div class="right">
+      <canvas id="positionChart" style="border:1px solid #ccc" width="400" height="400"></canvas>
+      <canvas id="velocityChart" style="border:1px solid #ccc" width="400" height="400"></canvas>
+    </div>
+  </div>
+  
+  <script src="https://unpkg.com/mediainfo.js/dist/mediainfo.min.js" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>  
+  <script async src="scripts/opencv.3.4.0.js" id="opencv" type="text/javascript"></script>  
+  <script src="scripts/vmtracker.js"></script>
+
+</body>
+</html>
