@@ -33,7 +33,9 @@ const onChangeFile = (mediainfo) => {
     mediainfo
       .analyzeData(getSize, readChunk)
       .then((result) => {
-        output.value = JSON.stringify(result, undefined, 4);
+        //output.value = JSON.stringify(result, undefined, 4);
+        output.innerHTML = JSON.stringify(result, undefined, 4);
+
         //console.log("Frame rate = " + result[1].frameRate);
         console.log(result);
         //console.dir(result);

@@ -24,6 +24,49 @@
   let startAndStopAuto = document.getElementById('startAndStopAuto');
   let startAndStopManual = document.getElementById('startAndStopManual');
 
+  let mediaInfoResult= document.getElementById('mediaInfoResult');
+  let showMediaInfo= document.getElementById('showMediaInfo');
+  showMediaInfo.addEventListener('click', evt => {
+    showModal("mediaInfoModal");
+  });
+
+  /* Define functions for the modal box */
+  let currentModal = "";
+
+  // Showing modal box
+  function showModal(name) {
+    // Set the feedback tag
+    setFeedback();
+
+    let text = document.getElementById(name);
+    text.style.display = "block";
+    currentModal = name;
+  }
+
+  // When the user clicks on <span> (x), close the current modal
+  let closeButtons = document.getElementsByClassName("close");
+  for( var i=0; i < closeButtons.length; ++i) {
+    closeButtons[i].onclick = function() {
+      document.getElementById(currentModal).style.display = "none"; 
+      currentModal = "";
+    }
+  }
+
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick = function(event) {
+    if (event.target == document.getElementById(currentModal) ) {
+      document.getElementById(currentModal).style.display = "none";
+    }
+  }
+
+  // set the feedback tag
+  function setFeedback() {
+    var name = "smackjvantilburgsmack"; // add salt
+    name = name.substr(5,11); // remove salt
+    $("feedback").html(name+"@gmail.com");  
+  }
+
+  
   // Global video parameters
   let streaming = false;
   let width = 0;
@@ -53,6 +96,7 @@
     frameCounter.innerHTML = 0;
     frameNumber = 0;
     FPS = 0;
+    showMediaInfo.removeAttribute("disabled");
     fpsButton.removeAttribute("disabled");
     fpsInput.removeAttribute("disabled");
     
@@ -144,7 +188,9 @@
           })
 
         mediainfo.analyzeData(getSize, readChunk).then((result) => {
-            //output.value = JSON.stringify(result, undefined, 4);
+            //mediaInfoResult.value = JSON.stringify(result, undefined, 4);
+            mediaInfoResult.innerHTML = JSON.stringify(result, undefined, 4);
+
             console.log(result);
             result.media.track.forEach(track => {
               if( track["@type"] === "Video") {

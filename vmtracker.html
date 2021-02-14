@@ -3,45 +3,15 @@
 <head>
   <title>Video Motion Tracker</title>
   <meta charset="UTF-8">
-<style>
-html, body {
-  height: 100%;
-  /*overflow: hidden;*/
-  margin: 0;
-}
-.content {
-  height: 100%;
-}
-.left {
-  float: left;
-  width: 70%;
-  height: 100%;
-  overflow: auto;
-  box-sizing: border-box;
-  padding: 0.5em;
-}
-.right {
-  float: left;
-  width: 30%;
-  background: white;
-  height: 100%;
-  overflow: auto;
-  box-sizing: border-box;
-  padding: 0.5em;
-}
-    </style>
-  </head>  
+  <link rel="stylesheet" type="text/css" href="style_vmt.css" media="screen,projection" />
+</head>  
 <body>
 
 <h1>Video Motion Tracker</h1>
 
   <input id="videoInput" type="file" accept="video/*,.mkv" disabled/>
-  <div class="control">Frame rate (fps): 
-    <input id="fpsInput" type="number" min="0.1" step="0.1" max="1000" style="width:60px" disabled>
-    </input>
-    <button id="fpsButton" disabled>Scan</button>&nbsp;&nbsp;<nobr id="fpsWaiting"></nobr>
-  </div> 
-
+  <button id="showMediaInfo" disabled>File info...</button>&nbsp;&nbsp;<nobr id="fpsWaiting"></nobr>
+  
   <div class="control">
     <button id="startAndStopAuto" disabled>Automatic</button>
     <button id="startAndStopManual" disabled>Manual</button>
@@ -66,6 +36,39 @@ html, body {
     </div>
   </div>
   
+  
+  <!-- The Modal boxes -->
+  <div id="about" class="modal">
+    <div class="modal-content modal-small"> <span class="close">&times;</span>
+      <center>
+        <h3>Video Motion Tracker (VMTracker)</h3>
+          <!--img src="favicon-apple-touch-114.png"/--><br clear="all"/><br/>
+          Version <version></version><br/>
+          &copy; 2021 Jeroen van Tilburg, MIT licentie <br/>
+          Feedback to <feedback></feedback> <br/> 
+          Source code: <a href="https://github.com/jeroenvantilburg/vmtracker">Github</a> <br/>
+          <!--Beschikbare versies: <br/><a href="index_prev.html">Vorige versie</a> (2.1)<br/> 
+                   <a href="index.html">Standaardversie</a> (2.2) <br/>
+                   <a href="index_dev.html">Ontwikkelversie</a> (2.3)<br/-->
+      </center>
+    </div>
+  </div>
+
+  <div id="mediaInfoModal" class="modal">
+    <div class="modal-content"> <span class="close">&times;</span>
+      <h2>Video File Info</h2>
+      <div class="control">Frame rate (fps): 
+        <input id="fpsInput" type="number" min="0.1" step="0.1" max="1000" style="width:60px" disabled>
+        </input>
+        <button id="fpsButton" disabled>Scan</button>
+      </div> 
+      <!--textarea id="mediaInfoResult"></textarea-->
+      <pre id="mediaInfoResult"></pre>
+    </div>
+  </div>
+
+
+  <script src="scripts/jquery-3.5.0.min.js"></script>
   <script src="https://unpkg.com/mediainfo.js/dist/mediainfo.min.js" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>  
   <script async src="scripts/opencv.3.4.0.js" id="opencv" type="text/javascript"></script>  
