@@ -9,23 +9,140 @@
    =========================================== */
   
     // HTML elements
-  let video        = document.getElementById('video');
-  let videoInput   = document.getElementById('videoInput');
-  let fpsInput     = document.getElementById('fpsInput');
-  let fpsButton    = document.getElementById('fpsButton');
-  let fpsStatusMsg = document.getElementById("fpsWaiting");
-  let prevButton   = document.getElementById('prev');
-  let playButton   = document.getElementById('play');
-  let nextButton   = document.getElementById('next');
-  let slider       = document.getElementById('slider');
-  let canvasOutput = document.getElementById('canvasOutput');
-  let canvasContext= canvasOutput.getContext('2d');
-  let frameCounter = document.getElementById("frameNumber")  
+  let video          = document.getElementById('video');
+  let videoInput     = document.getElementById('videoInput');
+  let fpsInput       = document.getElementById('fpsInput');
+  let fpsStatusMsg   = document.getElementById("fpsWaiting");
+  let mediaInfoResult= document.getElementById('mediaInfoResult');
+  let showMediaInfo  = document.getElementById('showMediaInfo');
+  let prevButton     = document.getElementById('prev');
+  let playButton     = document.getElementById('play');
+  let nextButton     = document.getElementById('next');
+  let slider         = document.getElementById('slider');
+  let canvasOutput   = document.getElementById('canvasOutput');
+  let canvasContext  = canvasOutput.getContext('2d');
+  let frameCounter   = document.getElementById("frameNumber")  
   let startAndStopAuto = document.getElementById('startAndStopAuto');
   let startAndStopManual = document.getElementById('startAndStopManual');
+  
+  // Global video parameters
+  let streaming = false;
+  let width = 0;
+  let height = 0;
+  let frameNumber = 0;
+  let FPS = 0.0;
+  let t0 = 0.0;
+  let integrationTime = 1;
+  let rawData = [];
 
-  let mediaInfoResult= document.getElementById('mediaInfoResult');
-  let showMediaInfo= document.getElementById('showMediaInfo');
+  //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
+  //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
+  //videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";  
+  
+  // Add event listener for when file is selected
+  videoInput.addEventListener('change', function() {
+    let URL = window.URL || window.webkitURL;
+    let file = this.files[0];
+    //let canPlay = video.canPlayType(file.type);
+    //if( canPlay === 'no' || canPlay === '' ) {
+    //  return;
+    //}
+    video.src = URL.createObjectURL(file);
+    
+    // Disable video control and reset video parameters when selecting new video
+    frameCounter.innerHTML = 0;
+    frameNumber = 0;
+    FPS = 0;
+    showMediaInfo.removeAttribute("disabled");
+    disableVideoControl();
+    
+    // Get the frame rate
+    getFPS();
+
+  }, false);
+  
+  // video playback failed - show a message saying why
+  video.addEventListener('error', (e) => {
+    switch (e.target.error.code) {
+      case e.target.error.MEDIA_ERR_ABORTED:
+        alert('You aborted the video playback.');
+        break;
+      case e.target.error.MEDIA_ERR_NETWORK:
+        alert('A network error caused the video download to fail part-way.');
+        break;
+      case e.target.error.MEDIA_ERR_DECODE:
+        alert('The video playback was aborted due to a corruption problem or because the video used features your browser did not support.');
+        break;
+      case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+        alert('The video could not be loaded, either because the server or network failed or because the format is not supported.');
+        break;
+      default:
+        alert('An unknown error occurred.');
+        break;
+    }
+    disableVideoControl();
+  });
+  
+
+  // Add event listener when the video is loaded
+  let videoReady = false;
+  video.addEventListener('loadedmetadata', () => {
+    videoReady = true;
+
+    // Get the dimensions of the video and prepare the canvas
+    width = video.videoWidth;
+    height = video.videoHeight;
+    canvasOutput.width = width;
+    canvasOutput.height = height;
+    canvasContext.drawImage(video,0,0, width, height );
+
+    console.log("Resolution: " + width.toString() + " x " + height.toString() );
+    console.log("Duration: " + video.duration );
+
+    enableVideoControl();
+  });
+  
+  // Update the frame rate (fps) when user gives input or when calculated
+  fpsInput.onchange = function() {
+    if( this.value > 0 ) {
+      FPS = this.value;
+      //console.log("FPS = " + FPS + " duration = " + video.duration + " *= " + video.duration * FPS );
+      slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
+    
+      // Always reset to first frame
+      gotoFrame( 0 );
+    
+      //enableVideoControl();
+    }
+  }
+  
+  // Enable the video control buttons
+  function enableVideoControl() {
+    startAndStopManual.removeAttribute('disabled');
+    startAndStopAuto.removeAttribute('disabled');
+    prevButton.removeAttribute('disabled');
+    playButton.removeAttribute('disabled');
+    nextButton.removeAttribute('disabled');
+    slider.removeAttribute('disabled');  
+  }
+
+  // Disable the video control buttons
+  function disableVideoControl() {
+    startAndStopManual.setAttribute('disabled', '');
+    startAndStopAuto.setAttribute('disabled', '');
+    prevButton.setAttribute('disabled', '');
+    playButton.setAttribute('disabled', '');
+    nextButton.setAttribute('disabled', '');
+    slider.setAttribute('disabled', '');  
+  }
+
+  // Select video only when openCV is ready
+  document.getElementById('opencv').onload= () => onOpenCvReady();
+  function onOpenCvReady() {
+    videoInput.removeAttribute('disabled');
+  }
+
+  // Event listener for the modal boxes
   showMediaInfo.addEventListener('click', evt => {
     showModal("mediaInfoModal");
   });
@@ -65,108 +182,7 @@
     name = name.substr(5,11); // remove salt
     $("feedback").html(name+"@gmail.com");  
   }
-
   
-  // Global video parameters
-  let streaming = false;
-  let width = 0;
-  let height = 0;
-  let frameNumber = 0;
-  let FPS = 0.0;
-  let t0 = 0.0;
-  let integrationTime = 1;
-  let rawData = [];
-
-  //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
-  //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
-  //videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";  
-  
-  // Add event listener for when file is selected
-  videoInput.addEventListener('change', function() {
-    let URL = window.URL || window.webkitURL;
-    let file = this.files[0];
-    //let canPlay = video.canPlayType(file.type);
-    //if( canPlay === 'no' || canPlay === '' ) {
-    //  return;
-    //}
-    video.src = URL.createObjectURL(file);
-    
-    // Disable video control and reset video parameters when selecting new video
-    disableVideoControl();
-    frameCounter.innerHTML = 0;
-    frameNumber = 0;
-    FPS = 0;
-    showMediaInfo.removeAttribute("disabled");
-    fpsButton.removeAttribute("disabled");
-    fpsInput.removeAttribute("disabled");
-    
-    // Get the frame rate
-    getFPS();
-
-  }, false);
-
-  // Add event listener when the video is loaded
-  let videoReady = false;
-  video.addEventListener('loadedmetadata', () => {
-    videoReady = true;
-
-    // Get the dimensions of the video and prepare the canvas
-    width = video.videoWidth;
-    height = video.videoHeight;
-    canvasOutput.width = width;
-    canvasOutput.height = height;
-    canvasContext.drawImage(video,0,0, width, height );
-
-    console.log("Resolution: " + width.toString() + " x " + height.toString() );
-    console.log("Duration: " + video.duration );
-    
-  });
-  
-  // Update the frame rate (fps) when user gives input or when calculated
-  fpsInput.onchange = function() {
-    if( this.value > 0 ) {
-      FPS = this.value;
-      //console.log("FPS = " + FPS + " duration = " + video.duration + " *= " + video.duration * FPS );
-      slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
-    
-      // Always reset to first frame
-      gotoFrame( 0 );
-    
-      enableVideoControl();
-    }
-  }
-  
-  // Enable the video control buttons
-  function enableVideoControl() {
-    startAndStopManual.removeAttribute('disabled');
-    startAndStopAuto.removeAttribute('disabled');
-    prevButton.removeAttribute('disabled');
-    playButton.removeAttribute('disabled');
-    nextButton.removeAttribute('disabled');
-    slider.removeAttribute('disabled');  
-  }
-
-  // Disable the video control buttons
-  function disableVideoControl() {
-    startAndStopManual.setAttribute('disabled', '');
-    startAndStopAuto.setAttribute('disabled', '');
-    prevButton.setAttribute('disabled', '');
-    playButton.setAttribute('disabled', '');
-    nextButton.setAttribute('disabled', '');
-    slider.setAttribute('disabled', '');  
-  }
-
-  // Select video only when openCV is ready
-  document.getElementById('opencv').onload= () => onOpenCvReady();
-  function onOpenCvReady() {
-    videoInput.removeAttribute('disabled');
-  }
-  
-  // When pressing button start calculating frame rate
-  fpsButton.onclick = function() {
-    getFPS();
-  }
-
   function getFPS() {
     fpsStatusMsg.innerHTML = "Calculating FPS... "
     
