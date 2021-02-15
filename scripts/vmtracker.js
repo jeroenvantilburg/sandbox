@@ -85,10 +85,10 @@
   videoInput.addEventListener('change', function() {
     let URL = window.URL || window.webkitURL;
     let file = this.files[0];
-    let canPlay = video.canPlayType(file.type);
-    if( canPlay === 'no' || canPlay === '' ) {
-      return;
-    }
+    //let canPlay = video.canPlayType(file.type);
+    //if( canPlay === 'no' || canPlay === '' ) {
+    //  return;
+    //}
     video.src = URL.createObjectURL(file);
     
     // Disable video control and reset video parameters when selecting new video
