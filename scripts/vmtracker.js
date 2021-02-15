@@ -32,29 +32,126 @@
   let frameNumber = 0;
   let FPS = 0.0;
   let t0 = 0.0;
-  let integrationTime = 1;
   let rawData = [];
+  let videoName = "";
+
+  // Settings. TODO let user modify it...
+  let decimalSeparator = getDecimalSeparator();
+  let integrationTime = 1;
+
+  let pixelsPerMeter = 1000;
+  let origin = {x: 0, y:1920}; // in pixels
 
   //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
   //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
-  //videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";  
+  //videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";    
+    
+  function getDecimalSeparator() {
+    
+    // Get the locale for an estimate of the decimal separator
+    let locale;
+    if (navigator.languages && navigator.languages.length) {
+      locale = navigator.languages[0];
+    } else {
+      locale = navigator.userLanguage || navigator.language || navigator.browserLanguage || 'en';
+    }
+
+    // Format a number to get the decimal separator
+    const numberWithDecimalSeparator = 1.1;
+    return Intl.NumberFormat(locale)
+        .formatToParts(numberWithDecimalSeparator)
+        .find(part => part.type === 'decimal')
+        .value;
+  }
+
+  
+  function toString(number){
+    return number.toString().replace('.',decimalSeparator);
+  }
+
+  function toNumber(string){
+    return parseFloat( string.replace(',','.') );
+  }
+
+
+  // Event listener for download button
+  let csvButton     = document.getElementById('csv');
+  csvButton.addEventListener('click', () => {
+        
+    let csvData = [];
+
+    // first line contains headers and meta data
+    csvData.push({"time [s]": "", "x position [m]": "", "y position [m]": "",
+                  "x velocity [m/s]": "", "y velocity [m/s]": "",
+                  "Frame rate [Hz]": toString(FPS), "Scale [px/m]": toString(1000)}  );
+
+    rawData.forEach(function (item, index) {
+      let time = getTime( item.t );
+      let pos = getXYposition( item );
+      let firstIndex = Math.ceil(index-integrationTime/2);
+      let secondIndex = Math.ceil(index+integrationTime/2);
+      let velocity;
+      if( firstIndex >= 0 && secondIndex < rawData.length ) {
+        velocity = getVelocity(firstIndex, secondIndex);
+      }
+      if( integrationTime%2 === 0 && velocity) {
+        csvData.push({"time [s]": toString(time), 
+                      "x position [m]": toString(pos.x), 
+                      "y position [m]": toString(pos.y),
+                      "x velocity [m/s]": toString(velocity.x), 
+                      "y velocity [m/s]": toString(velocity.y)}  );        
+      } else {
+        csvData.push({"time [s]": toString(time), 
+                      "x position [m]": toString(pos.x), 
+                      "y position [m]": toString(pos.y)}  );
+        if( velocity ) {
+          csvData.push({"time [s]": toString( velocity.t), 
+                        "x velocity [m/s]": toString(velocity.x), 
+                        "y velocity [m/s]": toString(velocity.y)}  );                  
+        }
+      }
+      
+    });
+
+    var csv = Papa.unparse( csvData, {quotes : true} );
+    console.log(csv);
+    console.log(csvData);
+
+    let filename = prompt("Save as...", videoName.substr(0, videoName.lastIndexOf('.'))+".csv");
+    if (filename != null && filename != "") {
+      download( filename, csv);
+    }
+
+  });
+
+
+  // Create an invisible download element
+  function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  }
+
+  
   
   // Add event listener for when file is selected
   videoInput.addEventListener('change', function() {
-    let URL = window.URL || window.webkitURL;
-    let file = this.files[0];
-    //let canPlay = video.canPlayType(file.type);
-    //if( canPlay === 'no' || canPlay === '' ) {
-    //  return;
-    //}
-    video.src = URL.createObjectURL(file);
-    
     // Disable video control and reset video parameters when selecting new video
     frameCounter.innerHTML = 0;
     frameNumber = 0;
     FPS = 0;
     showMediaInfo.removeAttribute("disabled");
     disableVideoControl();
+
+    // Get the file
+    let URL = window.URL || window.webkitURL;
+    let file = this.files[0];
+    video.src = URL.createObjectURL(file);
+    videoName = file.name;
     
     // Get the frame rate
     getFPS();
@@ -85,9 +182,7 @@
   
 
   // Add event listener when the video is loaded
-  let videoReady = false;
   video.addEventListener('loadedmetadata', () => {
-    videoReady = true;
 
     // Get the dimensions of the video and prepare the canvas
     width = video.videoWidth;
@@ -377,12 +472,24 @@ function onVideoStarted() {
 startAndStopManual.addEventListener('click', evt => {
   //canvasContext.drawImage(video,0,0, 320, 568 );
 
-  startAndStopManual.innerText = 'Stop';
+  if( startAndStopManual.innerText === 'Manual' ) {
+    startAndStopManual.innerText = 'Stop';
   
-  // TODO: Check if the scale is set
+    // TODO: Check if the scale and origin is set
+    // Must await result or organize the canvasOutput click event listener
   
-  // Start the manual clicking
-  canvasOutput.addEventListener('click', evt => {
+    // Start the manual clicking
+    canvasOutput.addEventListener('click', addRawDataPoint);
+  } else {
+    startAndStopManual.innerText = 'Manual';
+    canvasOutput.removeEventListener('click', addRawDataPoint);
+    
+  }
+  
+  
+});
+
+  function addRawDataPoint(evt) {
     // Get mouse position in pixels
     let posPx = getMousePos(canvasOutput, evt);
     
@@ -393,68 +500,29 @@ startAndStopManual.addEventListener('click', evt => {
     // Update plots
     updatePositionPlot();
     updateVelocityPlot();
-
-    
-    /*let xPositions = [];
-    let yPositions = [];
-    rawData.forEach(function (item, index) {
-      //console.log(item, index);
-      let time = getTime( item.t );
-      let pos = getXYposition( item );
-      xPositions.push( {x: time, y: pos.x} );
-      yPositions.push( {x: time, y: pos.y} );
-    });
-    positionChart.data.datasets[0].data = xPositions;
-    positionChart.data.datasets[1].data = yPositions;
-    positionChart.update();  
-    
-    // Create velocity data for plot
-    let xVelocities = [];
-    let yVelocities = [];
-    rawData.forEach(function (item, index) {
-      if( index > integrationTime ) {
-        //let prevItem = rawData[ index-integrationTime ];
-        let velocity = getVelocity(index - integrationTime, index);
-        xVelocities.push( {x: velocity.t, y: velocity.x} );
-        yVelocities.push( {x: velocity.t, y: velocity.y} );
-      }
-    });
-    velocityChart.data.datasets[0].data = xVelocities;
-    velocityChart.data.datasets[1].data = yVelocities;
-    velocityChart.update();  
-    */
-    
-    // Get the current time from the frameNumber
-    /*let time = getTime(frameNumber);
-        
-    // Convert pixels to x-y-position
-    let pos = getXYposition(posPx);
-    let dataPoint = { t: time, x: pos.x, y: pos.y };
-    
-    // Update position plot
-    updatePlot(positionChart, dataPoint );
-
-    // Calculate velocity
-    //console.log(chart.data.datasets[0].data.length);
-    
-    // Update previous velocity bin
-    //let thisItem = rawData.findIndex(entry => entry.t === frameNumber);
-    let prevItem = thisItem - integrationTime;
-    if( prevItem >= 0 ) {
-      updatePlot(velocityChart, getVelocity( prevItem, thisItem ) );
-    } 
-    let nextItem = thisItem + integrationTime;
-    if( nextItem < rawData.length ) {
-      updatePlot(velocityChart, getVelocity( thisItem, nextItem ) );      
-    }
-    */
     
     // Go to next frame
     gotoFrame(frameNumber+1);
     
-  });
+  }
+
+
   
-});
+  
+  // update origin
+  function updateOrigin() {
+    canvasOutput.addEventListener('click', evt => {
+      // Get mouse position in pixels
+      let posPx = getMousePos(canvasOutput, evt);
+    
+      // Update origin
+      origin = {x: posPx.x, y: posPx.y};
+      
+      // Remove event listener
+      evt.target.removeEventListener(evt.type, arguments.callee);
+    });
+  }
+
 
   function addRawData( rawDataPoint ) {
     let thisIndex = rawData.findIndex(entry => entry.t >= frameNumber);
@@ -555,8 +623,6 @@ function updatePlot(chart, data) {
 }
 
 function getXYposition(posPx) {
-  let pixelsPerMeter = 1000;
-  let origin = {x: 0, y:1920}; // in pixels
   return {
     x: (posPx.x-origin.x)/pixelsPerMeter,       
     y: (origin.y-posPx.y)/pixelsPerMeter 
