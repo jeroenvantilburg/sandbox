@@ -12,9 +12,11 @@
   let video          = document.getElementById('video');
   let videoInput     = document.getElementById('videoInput');
   let fpsInput       = document.getElementById('fpsInput');
-  let fpsStatusMsg   = document.getElementById("fpsWaiting");
+  let statusMsg      = document.getElementById("statusMsg");
   let mediaInfoResult= document.getElementById('mediaInfoResult');
   let showMediaInfo  = document.getElementById('showMediaInfo');
+  let originButton   = document.getElementById('origin');
+  let scaleButton    = document.getElementById('scale');
   let prevButton     = document.getElementById('prev');
   let playButton     = document.getElementById('play');
   let nextButton     = document.getElementById('next');
@@ -39,8 +41,9 @@
   let decimalSeparator = getDecimalSeparator();
   let integrationTime = 1;
 
+  let scale1, scale2;
   let pixelsPerMeter = 1000;
-  let origin = {x: 0, y:1920}; // in pixels
+  let origin = {x: 0, y: 0}; // in pixels
 
   //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
   //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
@@ -83,7 +86,10 @@
     // first line contains headers and meta data
     csvData.push({"time [s]": "", "x position [m]": "", "y position [m]": "",
                   "x velocity [m/s]": "", "y velocity [m/s]": "",
-                  "Frame rate [Hz]": toString(FPS), "Scale [px/m]": toString(1000)}  );
+                  "Frame rate [Hz]": toString(FPS), 
+                  "x origin [px]": toString(origin.x), 
+                  "y origin [px]": toString(origin.y), 
+                  "Scale [px/m]": toString(pixelsPerMeter)}  );
 
     rawData.forEach(function (item, index) {
       let time = getTime( item.t );
@@ -145,7 +151,9 @@
     frameNumber = 0;
     FPS = 0;
     showMediaInfo.removeAttribute("disabled");
+    disableAnalysis();
     disableVideoControl();
+
 
     // Get the file
     let URL = window.URL || window.webkitURL;
@@ -190,6 +198,10 @@
     canvasOutput.width = width;
     canvasOutput.height = height;
     canvasContext.drawImage(video,0,0, width, height );
+    
+    // Set initial origin to left bottom corner
+    origin.x = 0;
+    origin.y = height;
 
     console.log("Resolution: " + width.toString() + " x " + height.toString() );
     console.log("Duration: " + video.duration );
@@ -213,8 +225,8 @@
   
   // Enable the video control buttons
   function enableVideoControl() {
-    startAndStopManual.removeAttribute('disabled');
-    startAndStopAuto.removeAttribute('disabled');
+    originButton.removeAttribute('disabled');
+    scaleButton.removeAttribute('disabled');
     prevButton.removeAttribute('disabled');
     playButton.removeAttribute('disabled');
     nextButton.removeAttribute('disabled');
@@ -223,14 +235,26 @@
 
   // Disable the video control buttons
   function disableVideoControl() {
-    startAndStopManual.setAttribute('disabled', '');
-    startAndStopAuto.setAttribute('disabled', '');
+    originButton.setAttribute('disabled', '');
+    scaleButton.setAttribute('disabled', '');
     prevButton.setAttribute('disabled', '');
     playButton.setAttribute('disabled', '');
     nextButton.setAttribute('disabled', '');
     slider.setAttribute('disabled', '');  
   }
 
+  function enableAnalysis() {
+    startAndStopManual.removeAttribute('disabled');
+    startAndStopAuto.removeAttribute('disabled');
+  }
+
+  function disableAnalysis() {
+    startAndStopManual.setAttribute('disabled', '');
+    startAndStopAuto.setAttribute('disabled', '');
+  }
+
+
+  
   // Select video only when openCV is ready
   document.getElementById('opencv').onload= () => onOpenCvReady();
   function onOpenCvReady() {
@@ -279,7 +303,7 @@
   }
   
   function getFPS() {
-    fpsStatusMsg.innerHTML = "Calculating FPS... "
+    statusMsg.innerHTML = "Calculating FPS... "
     
     MediaInfo({ format: 'object' }, (mediainfo) => {
       const file = videoInput.files[0];
@@ -310,12 +334,12 @@
                 // Set the new FPS
                 fpsInput.value = track.FrameRate;
                 fpsInput.onchange();
-                fpsStatusMsg.innerHTML = "";
+                statusMsg.innerHTML = "";
               }
             } );
         })
           .catch((error) => {  
-            fpsStatusMsg.innerHTML = `An error occured:\n${error.stack}`
+            statusMsg.innerHTML = `An error occured:\n${error.stack}`
         })
       }
     })
@@ -353,7 +377,229 @@
   }
 
 
+  let canvasClick = "";
+  canvasOutput.addEventListener('click', (evt) => {
+    if( canvasClick === "addRawDataPoint" ) {
+      addRawDataPoint(evt);
+    } else if( canvasClick === "setOrigin" ) {
+      setOrigin(evt);
+    } else if( canvasClick === "setScale1" ) {
+      setScale1(evt);
+    } else if( canvasClick === "setScale2" ) {
+      setScale2(evt);
+    } 
+  });
 
+  // Set origin button
+  originButton.addEventListener('click', evt => {
+    if( canvasClick === "addRawDataPoint") {
+      startAndStopManual.innerText = 'Manual';
+    }
+    canvasClick = "setOrigin";
+    // set statusMsg
+    statusMsg.innerHTML = "Click on the origin...";
+  });
+  
+  // update origin
+  function setOrigin(evt) {
+    // Get mouse position in pixels
+    let posPx = getMousePos(canvasOutput, evt);
+    
+    // Update origin
+    origin = {x: posPx.x, y: posPx.y};
+    
+    // Reset statusMsg and canvas click event
+    canvasClick = "";
+    statusMsg.innerHTML = "";
+  }
+  
+  // Set scale button
+  scaleButton.addEventListener('click', evt => {
+    if( canvasClick === "addRawDataPoint") {
+      startAndStopManual.innerText = 'Manual';
+    } 
+    canvasClick = "setScale1";
+    // set statusMsg
+    statusMsg.innerHTML = "Click on the first point";
+  });
+  
+  // Set the scale (1st point)
+  function setScale1(evt) {
+    // Get mouse position in pixels
+    let posPx = getMousePos(canvasOutput, evt);
+    
+    // Set the scale (1st point)
+    scale1 = {x: posPx.x, y: posPx.y};
+    
+    // Reset statusMsg and canvas click event
+    canvasClick = "setScale2";
+    statusMsg.innerHTML = "Click on the second point";    
+  }
+
+  // Set the scale (2nd point)
+  function setScale2(evt) {
+    // Get mouse position in pixels
+    let posPx = getMousePos(canvasOutput, evt);
+    
+    let distanceInMeter = toNumber( prompt("How long is this distance in meter?", "1.0") );
+    
+    // Update scale
+    scale2 = {x: posPx.x, y: posPx.y};
+    pixelsPerMeter = Math.sqrt( (scale2.x-scale1.x)**2 + (scale2.y-scale1.y)**2 ) / distanceInMeter;
+    
+    // Reset statusMsg and canvas click event
+    canvasClick = "";
+    statusMsg.innerHTML = "";
+    
+    // Enable video analysis
+    enableAnalysis();
+  }
+
+  // Manual analysis
+  startAndStopManual.addEventListener('click', evt => {
+
+    if( startAndStopManual.innerText === 'Manual' ) {
+      startAndStopManual.innerText = 'Stop';
+      canvasClick = "addRawDataPoint";
+    } else {
+      startAndStopManual.innerText = 'Manual';
+      canvasClick = "";
+    }
+  });
+
+  function addRawDataPoint(evt) {
+    // Get mouse position in pixels
+    let posPx = getMousePos(canvasOutput, evt);
+    
+    // Add raw data
+    let rawDataPoint = {t: frameNumber, x: posPx.x, y: posPx.y};
+    addRawData( rawDataPoint );
+    
+    // Update plots
+    updatePositionPlot();
+    updateVelocityPlot();
+    
+    // Go to next frame
+    gotoFrame(frameNumber+1);
+    
+  }
+
+  function addRawData( rawDataPoint ) {
+    let thisIndex = rawData.findIndex(entry => entry.t >= frameNumber);
+    if( thisIndex < 0 ) { // insert at the end 
+      thisItem = rawData.length;
+      rawData.push( rawDataPoint );
+    } else if ( rawData[thisIndex].t === frameNumber ) { // update
+      rawData[thisIndex] = rawDataPoint;
+    } else { // insert point at index
+      rawData.splice(thisIndex, 0, rawDataPoint );
+    }
+  }
+
+
+  function updatePositionPlot() { 
+    let xPositions = [];
+    let yPositions = [];
+    rawData.forEach(function (item, index) {
+      //console.log(item, index);
+      let time = getTime( item.t );
+      let pos = getXYposition( item );
+      xPositions.push( {x: time, y: pos.x} );
+      yPositions.push( {x: time, y: pos.y} );
+    });
+    positionChart.data.datasets[0].data = xPositions;
+    positionChart.data.datasets[1].data = yPositions;
+    positionChart.update();  
+  }
+
+  function updateVelocityPlot() { 
+    let xVelocities = [];
+    let yVelocities = [];
+    rawData.forEach(function (item, index) {
+      if( index > integrationTime ) {
+        //let prevItem = rawData[ index-integrationTime ];
+        let velocity = getVelocity(index - integrationTime, index);
+        xVelocities.push( {x: velocity.t, y: velocity.x} );
+        yVelocities.push( {x: velocity.t, y: velocity.y} );
+      }
+    });
+    velocityChart.data.datasets[0].data = xVelocities;
+    velocityChart.data.datasets[1].data = yVelocities;
+    velocityChart.update();  
+  }
+
+  function getVelocity(index1, index2){
+    let pos2 = getXYposition( rawData[index2] );    
+    let pos1 = getXYposition( rawData[index1] );
+    let t2 = getTime( rawData[index2].t );
+    let t1 = getTime( rawData[index1].t );
+    let dt = t2 - t1;
+    let meanT = 0.5*( t1 + t2 );
+    let velocityX = (pos2.x - pos1.x ) / dt;
+    let velocityY = (pos2.y - pos1.y ) / dt;
+    return { t: meanT, x : velocityX, y : velocityY }; 
+  }
+
+  function getTime(targetFrame) {
+    return t0 + (targetFrame + 0.5)/FPS;
+  }
+
+  function gotoFrame(targetFrame) {
+    let newTime = (targetFrame + 0.5)/FPS;
+    console.log(newTime);
+    if( newTime < t0 ) {
+      return false;
+    } else if( newTime > video.duration ) {
+      return false;
+    } else {
+      frameNumber = targetFrame;
+      video.currentTime = newTime;
+      video.addEventListener("seeked", function(e) {
+        e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
+        canvasContext.drawImage(video,0,0, width, height );
+        frameCounter.innerHTML = frameNumber + " / " +slider.max;
+        slider.value = frameNumber;
+      });
+      return true;
+    }
+  }
+
+  function getMousePos(canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+  }
+
+  function getXYposition(posPx) {
+    return {
+      x: (posPx.x-origin.x)/pixelsPerMeter,       
+      y: (origin.y-posPx.y)/pixelsPerMeter 
+    };
+  }
+
+  startAndStopAuto.addEventListener('click', () => {
+    if (!streaming) {
+        //utils.clearError();
+        //video.play().then(() => {
+        video.pause();
+        onVideoStarted();
+        //});
+    } else {
+        video.pause();
+        video.currentTime = 0.5/FPS;
+        onVideoStopped();
+    }
+  });
+
+  function onVideoStopped() {
+    streaming = false;
+    //canvasContext.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
+    startAndStopAuto.innerText = 'Automatic';
+  }
+  
+  
 // Automatic analysis
 function onVideoStarted() {
   streaming = true;
@@ -466,223 +712,39 @@ function onVideoStarted() {
   setTimeout(processVideo, 0);
 }
 
-
-
-// Manual analysis
-startAndStopManual.addEventListener('click', evt => {
-  //canvasContext.drawImage(video,0,0, 320, 568 );
-
-  if( startAndStopManual.innerText === 'Manual' ) {
-    startAndStopManual.innerText = 'Stop';
-  
-    // TODO: Check if the scale and origin is set
-    // Must await result or organize the canvasOutput click event listener
-  
-    // Start the manual clicking
-    canvasOutput.addEventListener('click', addRawDataPoint);
-  } else {
-    startAndStopManual.innerText = 'Manual';
-    canvasOutput.removeEventListener('click', addRawDataPoint);
-    
-  }
-  
-  
-});
-
-  function addRawDataPoint(evt) {
-    // Get mouse position in pixels
-    let posPx = getMousePos(canvasOutput, evt);
-    
-    // Add raw data
-    let rawDataPoint = {t: frameNumber, x: posPx.x, y: posPx.y};
-    addRawData( rawDataPoint );
-    
-    // Update plots
-    updatePositionPlot();
-    updateVelocityPlot();
-    
-    // Go to next frame
-    gotoFrame(frameNumber+1);
-    
-  }
-
-
-  
-  
-  // update origin
-  function updateOrigin() {
-    canvasOutput.addEventListener('click', evt => {
-      // Get mouse position in pixels
-      let posPx = getMousePos(canvasOutput, evt);
-    
-      // Update origin
-      origin = {x: posPx.x, y: posPx.y};
-      
-      // Remove event listener
-      evt.target.removeEventListener(evt.type, arguments.callee);
-    });
-  }
-
-
-  function addRawData( rawDataPoint ) {
-    let thisIndex = rawData.findIndex(entry => entry.t >= frameNumber);
-    if( thisIndex < 0 ) { // insert at the end 
-      thisItem = rawData.length;
-      rawData.push( rawDataPoint );
-    } else if ( rawData[thisIndex].t === frameNumber ) { // update
-      rawData[thisIndex] = rawDataPoint;
-    } else { // insert point at index
-      rawData.splice(thisIndex, 0, rawDataPoint );
-    }
-  }
-
-
-  function updatePositionPlot() { 
-    let xPositions = [];
-    let yPositions = [];
-    rawData.forEach(function (item, index) {
-      //console.log(item, index);
-      let time = getTime( item.t );
-      let pos = getXYposition( item );
-      xPositions.push( {x: time, y: pos.x} );
-      yPositions.push( {x: time, y: pos.y} );
-    });
-    positionChart.data.datasets[0].data = xPositions;
-    positionChart.data.datasets[1].data = yPositions;
-    positionChart.update();  
-  }
-
-  function updateVelocityPlot() { 
-    let xVelocities = [];
-    let yVelocities = [];
-    rawData.forEach(function (item, index) {
-      if( index > integrationTime ) {
-        //let prevItem = rawData[ index-integrationTime ];
-        let velocity = getVelocity(index - integrationTime, index);
-        xVelocities.push( {x: velocity.t, y: velocity.x} );
-        yVelocities.push( {x: velocity.t, y: velocity.y} );
-      }
-    });
-    velocityChart.data.datasets[0].data = xVelocities;
-    velocityChart.data.datasets[1].data = yVelocities;
-    velocityChart.update();  
-  }
-
-  function getVelocity(index1, index2){
-    let pos2 = getXYposition( rawData[index2] );    
-    let pos1 = getXYposition( rawData[index1] );
-    let t2 = getTime( rawData[index2].t );
-    let t1 = getTime( rawData[index1].t );
-    let dt = t2 - t1;
-    let meanT = 0.5*( t1 + t2 );
-    let velocityX = (pos2.x - pos1.x ) / dt;
-    let velocityY = (pos2.y - pos1.y ) / dt;
-    return { t: meanT, x : velocityX, y : velocityY }; 
-  }
-
-  function getTime(targetFrame) {
-    return t0 + (targetFrame + 0.5)/FPS;
-  }
-
-  function gotoFrame(targetFrame) {
-    let newTime = (targetFrame + 0.5)/FPS;
-    console.log(newTime);
-    if( newTime < t0 ) {
-      return false;
-    } else if( newTime > video.duration ) {
-      return false;
-    } else {
-      frameNumber = targetFrame;
-      video.currentTime = newTime;
-      video.addEventListener("seeked", function(e) {
-        e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
-        canvasContext.drawImage(video,0,0, width, height );
-        frameCounter.innerHTML = frameNumber + " / " +slider.max;
-        slider.value = frameNumber;
-      });
-      return true;
-    }
-  }
-
-
-
-  function getMousePos(canvas, evt) {
-    var rect = canvas.getBoundingClientRect();
-    return {
-      x: evt.clientX - rect.left,
-      y: evt.clientY - rect.top
-    };
-  }
-
-// Obsolete
-function updatePlot(chart, data) { 
-  console.log(data);
-  chart.data.datasets[0].data.push( {x: data.t, y: data.x} ); 
-  chart.data.datasets[1].data.push( {x: data.t, y: data.y} ); 
-  chart.update();  
-}
-
-function getXYposition(posPx) {
-  return {
-    x: (posPx.x-origin.x)/pixelsPerMeter,       
-    y: (origin.y-posPx.y)/pixelsPerMeter 
-  };
-}
-
-startAndStopAuto.addEventListener('click', () => {
-    if (!streaming) {
-        //utils.clearError();
-        //video.play().then(() => {
-        video.pause();
-        onVideoStarted();
-        //});
-    } else {
-        video.pause();
-        video.currentTime = 0.5/FPS;
-        onVideoStopped();
-    }
-});
-
-function onVideoStopped() {
-    streaming = false;
-    //canvasContext.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
-    startAndStopAuto.innerText = 'Automatic';
-}
-  
-
-// Plotting stuff
-let options= { scales: { xAxes: [{ scaleLabel:{ labelString: 'time (s)', 
-                                               display: true},
-                                  type: 'linear', position: 'bottom' }] ,
-                         yAxes: [{ scaleLabel:{ labelString: 'Position (m)', 
+  // Plotting stuff
+  let options= { scales: { xAxes: [{ scaleLabel:{ labelString: 'time (s)', 
+                                                  display: true},
+                                    type: 'linear', position: 'bottom' }] ,
+                           yAxes: [{ scaleLabel:{ labelString: 'Position (m)', 
                                                 display: true} }]
-                       }};
+                         }};
 
-let pData = { datasets: [{ label: 'x', fill: 'false', pointBackgroundColor: 'red', 
-                      borderColor: 'red', backgroundColor: 'red' },
-                     { label: 'y', fill: 'false', pointBackgroundColor: 'blue', 
-                      borderColor: 'blue', backgroundColor: 'blue' }] };
+  let pData = { datasets: [{ label: 'x', fill: 'false', pointBackgroundColor: 'red', 
+                        borderColor: 'red', backgroundColor: 'red' },
+                       { label: 'y', fill: 'false', pointBackgroundColor: 'blue', 
+                        borderColor: 'blue', backgroundColor: 'blue' }] };
 
 
-let posCtx = document.getElementById('positionChart').getContext('2d');
-let positionChart = new Chart(posCtx, {  
-  type: 'line',
-  data: pData,
-  options: options
-});
+  let posCtx = document.getElementById('positionChart').getContext('2d');
+  let positionChart = new Chart(posCtx, {  
+    type: 'line',
+    data: pData,
+    options: options
+  });
 
-let vData = { datasets: [{ label: 'x', fill: 'false', pointBackgroundColor: 'red', 
-                      borderColor: 'red', backgroundColor: 'red' },
-                     { label: 'y', fill: 'false', pointBackgroundColor: 'blue', 
-                      borderColor: 'blue', backgroundColor: 'blue' }] };
+  let vData = { datasets: [{ label: 'x', fill: 'false', pointBackgroundColor: 'red', 
+                        borderColor: 'red', backgroundColor: 'red' },
+                       { label: 'y', fill: 'false', pointBackgroundColor: 'blue', 
+                        borderColor: 'blue', backgroundColor: 'blue' }] };
 
-let velocityCtx = document.getElementById('velocityChart').getContext('2d');
-let velocityChart = new Chart(velocityCtx, {  
-  type: 'line',
-  data: vData,
-  options: options
-});
-velocityChart.options.scales.yAxes[0].scaleLabel.labelString = "Velocity (m/s)";
+  let velocityCtx = document.getElementById('velocityChart').getContext('2d');
+  let velocityChart = new Chart(velocityCtx, {  
+    type: 'line',
+    data: vData,
+    options: options
+  });
+  velocityChart.options.scales.yAxes[0].scaleLabel.labelString = "Velocity (m/s)";
 
 })();
 
