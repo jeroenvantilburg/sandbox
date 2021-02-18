@@ -16,7 +16,10 @@
   let mediaInfoResult= document.getElementById('mediaInfoResult');
   let showMediaInfo  = document.getElementById('showMediaInfo');
   let originButton   = document.getElementById('origin');
+  let originXInput   = document.getElementById('originXInput');
+  let originYInput   = document.getElementById('originYInput');  
   let scaleButton    = document.getElementById('scale');
+  let scaleInput     = document.getElementById('scaleInput');  
   let prevButton     = document.getElementById('prev');
   let playButton     = document.getElementById('play');
   let nextButton     = document.getElementById('next');
@@ -28,6 +31,7 @@
   let startAndStopManual = document.getElementById('startAndStopManual');
   
   // Global video parameters
+  let playing = false;
   let streaming = false;
   let width = 0;
   let height = 0;
@@ -150,7 +154,6 @@
     frameCounter.innerHTML = 0;
     frameNumber = 0;
     FPS = 0;
-    showMediaInfo.removeAttribute("disabled");
     disableAnalysis();
     disableVideoControl();
 
@@ -200,8 +203,10 @@
     canvasContext.drawImage(video,0,0, width, height );
     
     // Set initial origin to left bottom corner
-    origin.x = 0;
-    origin.y = height;
+    originXInput.value = 0;
+    originYInput.value = height;     
+    originXInput.onchange();
+    originYInput.onchange();
 
     console.log("Resolution: " + width.toString() + " x " + height.toString() );
     console.log("Duration: " + video.duration );
@@ -218,25 +223,68 @@
     
       // Always reset to first frame
       gotoFrame( 0 );
-    
-      //enableVideoControl();
+      this.blur(); // remove focus
+    }
+  }
+
+  // Update the origin when user gives input or when calculated
+  originXInput.onchange = function() {
+    if( isNaN(this.value) ) {
+      this.value = "";
+    } else {
+      origin.x = this.value;  
+      this.blur(); // remove focus
+    }
+  }
+  originYInput.onchange = function() {
+    if( isNaN(this.value) ) {
+      this.value = "";
+    } else {
+      origin.y = this.value;
+      this.blur(); // remove focus
+    }
+  }
+  
+  // Update the origin when user gives input or when calculated
+  scaleInput.onchange = function() {
+    if( isNaN(this.value) || +this.value <= 0 ) {
+      this.value = "";
+      this.style.background = 'pink';
+    } else {
+      pixelsPerMeter = this.value;
+      this.blur(); // remove focus
+      this.style.background = '';
+      // Enable video analysis
+      enableAnalysis();
     }
   }
   
   // Enable the video control buttons
   function enableVideoControl() {
+    showMediaInfo.removeAttribute("disabled");
+    fpsInput.removeAttribute("disabled");
     originButton.removeAttribute('disabled');
+    originXInput.removeAttribute('disabled');
+    originYInput.removeAttribute('disabled');
     scaleButton.removeAttribute('disabled');
+    scaleInput.removeAttribute('disabled');
     prevButton.removeAttribute('disabled');
     playButton.removeAttribute('disabled');
     nextButton.removeAttribute('disabled');
-    slider.removeAttribute('disabled');  
+    slider.removeAttribute('disabled'); 
+    
+    scaleInput.style.background = 'pink';
   }
 
   // Disable the video control buttons
   function disableVideoControl() {
+    showMediaInfo.setAttribute('disabled', '');
+    fpsInput.setAttribute('disabled', '');
     originButton.setAttribute('disabled', '');
+    originXInput.setAttribute('disabled', '');
+    originYInput.setAttribute('disabled', '');
     scaleButton.setAttribute('disabled', '');
+    scaleInput.setAttribute('disabled', '');
     prevButton.setAttribute('disabled', '');
     playButton.setAttribute('disabled', '');
     nextButton.setAttribute('disabled', '');
@@ -355,10 +403,34 @@
     gotoFrame(frameNumber+1);
   });
 
+  
   var playIntervalID=0;
+  $('#play').click(function() {
+    console.log("tot hier");
+    $(this).find('.fa-play,.fa-pause').toggleClass('fa-pause').toggleClass('fa-play');
+    if ( playing === false ) {
+      playing = true;
+      let that = this;
+      playIntervalID = window.setInterval( function() { 
+        if( gotoFrame(frameNumber+1) == false ) {
+          window.clearInterval( playIntervalID );
+          playing = false;
+          $(that).find('.fa-play,.fa-pause').toggleClass('fa-pause').toggleClass('fa-play');
+        } 
+      }, 1000/FPS );
+    } else {
+      playing = false;
+      window.clearInterval( playIntervalID );    
+    }
+  });
+  
+  
+  /*var playIntervalID=0;
   playButton.addEventListener('click', evt => {
-    if ( playButton.innerText === 'play' ) {
-      playButton.innerText = 'pause';
+    if ( playing === false ) {
+      playing = true;
+      //playButton.innerText = 'pause';
+      //this.find('.fa-play').toggleClass('fa-play fa-pause')
       playIntervalID = window.setInterval( function() { 
         if( gotoFrame(frameNumber+1) == false ) {
           window.clearInterval( playIntervalID );
@@ -366,10 +438,11 @@
         } 
       }, 1000/FPS );
     } else {
+      playing = false;
       window.clearInterval( playIntervalID );    
-      playButton.innerText = 'play';
+      //playButton.innerText = 'play';
     }
-  });
+  });*/
 
   slider.onchange = function() {
     // Go to next frame
@@ -406,7 +479,10 @@
     let posPx = getMousePos(canvasOutput, evt);
     
     // Update origin
-    origin = {x: posPx.x, y: posPx.y};
+    originXInput.value = posPx.x;
+    originYInput.value = posPx.y;
+    originXInput.onchange();
+    originYInput.onchange();
     
     // Reset statusMsg and canvas click event
     canvasClick = "";
@@ -445,14 +521,16 @@
     
     // Update scale
     scale2 = {x: posPx.x, y: posPx.y};
-    pixelsPerMeter = Math.sqrt( (scale2.x-scale1.x)**2 + (scale2.y-scale1.y)**2 ) / distanceInMeter;
+    
+        // Update origin
+    scaleInput.value = Math.sqrt( (scale2.x-scale1.x)**2 + (scale2.y-scale1.y)**2 ) / distanceInMeter;
+    scaleInput.onchange();
+    //pixelsPerMeter = Math.sqrt( (scale2.x-scale1.x)**2 + (scale2.y-scale1.y)**2 ) / distanceInMeter;
     
     // Reset statusMsg and canvas click event
     canvasClick = "";
     statusMsg.innerHTML = "";
     
-    // Enable video analysis
-    enableAnalysis();
   }
 
   // Manual analysis
@@ -725,9 +803,12 @@ function onVideoStarted() {
                        { label: 'y', fill: 'false', pointBackgroundColor: 'blue', 
                         borderColor: 'blue', backgroundColor: 'blue' }] };
 
+  Chart.defaults.global.responsive = false;
+  Chart.defaults.global.defaultFontSize = 10;
 
+  
   let posCtx = document.getElementById('positionChart').getContext('2d');
-  let positionChart = new Chart(posCtx, {  
+  let positionChart = new Chart(posCtx, {
     type: 'line',
     data: pData,
     options: options

@@ -1,10 +1,106 @@
 html, body {
   height: 100%;
   /*overflow: hidden;*/
+  font:100% Verdana,Tahoma,Arial,sans-serif;
   margin: 0;
 }
+
+body * {
+  box-sizing: border-box;
+}
+
+.header {
+  font-size: 30px;
+  height: 50px;
+  background: #ccc;
+  padding: 5px 15px;
+  font-weight: bold;
+}
+
+.body {
+  padding: 0px;
+  position: absolute;
+  top: 50px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  font-size: 0.7em;
+}
+
+.sidebar {
+  padding: 0px 5px;
+  background: #fbfbfb;
+  flex: 0 0 360px;
+  overflow: auto;
+}
+
+.side-header {
+  margin: 0px -5px;
+  padding: 5px;
+  background: #bbb;
+  color: #fff;
+  font-size: 2.0em;
+  font-weight: bold;
+}
+
+.main {
+  flex: 1;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  padding: 5px 5px;
+  background: #ddd;
+  color: #fff;
+  font-size: 1.0em;
+}
+
 .content {
-  height: 100%;
+  padding: 5px;
+  flex: 1 1;
+  overflow: auto;
+}
+
+@media screen and (max-width: 900px) { 
+  .body {flex-direction: column;} 
+  .main {width: 100vw;}
+}
+
+.center {
+  text-align: center;
+}
+
+
+/* Remove the input number arrows */
+/* Chrome, Safari, Edge, Opera */
+.no-spin::-webkit-inner-spin-button, .no-spin::-webkit-outer-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+/* Firefox */
+.no-spin {
+    -moz-appearance:textfield !important;
+}
+
+/* Remove the input number arrows */
+/* Chrome, Safari, Edge, Opera */
+/*input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}*/
+
+/* Firefox */
+/*input[type=number] {
+  -moz-appearance: textfield;
+}*/
+
+/*
+.content {
+  height: 70%;
 }
 .left {
   float: left;
@@ -23,7 +119,7 @@ html, body {
   box-sizing: border-box;
   padding: 0.5em;
 }
-
+*/
 
 /* https://www.w3schools.com/howto/howto_css_modals.asp */
 /* The Modal (background) */

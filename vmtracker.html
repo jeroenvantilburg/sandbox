@@ -4,44 +4,75 @@
   <title>Video Motion Tracker</title>
   <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="style_vmt.css" media="screen,projection" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>  
 <body>
-
-<h1>Video Motion Tracker</h1>
+  <div class="header">Video Motion Tracker</div>
+  <div class="body">
+    <div class="main">  
+	  	<div class="page-header">
 
   <input id="videoInput" type="file" accept="video/*,.mkv" disabled/>
-  <button id="showMediaInfo" disabled>File info...</button>
-  <button id="csv">Export data</button>
   &nbsp;&nbsp;<nobr id="statusMsg"></nobr>
   
-  <div class="control">
-    <button id="origin" disabled>Set origin</button>
-    <button id="scale" disabled>Set scale</button>
-  </div>
-
   <div class="control">
     <button id="startAndStopAuto" disabled>Automatic</button>
     <button id="startAndStopManual" disabled>Manual</button>
   </div>
 
-  <div class="control">
-    <button id="prev" disabled>prev</button>
-    <button id="play" disabled>play</button>
-    <button id="next" disabled>next</button>
+  <div class="center">
+    <button id="prev" disabled><i class="fa fa-step-backward"></i></button>
+    <button id="play" disabled><i class="fa fa-play"></i></button>
+    <button id="next" disabled><i class="fa fa-step-forward"></i></button>
     <input id="slider" type="range" min="0" max="100" step=1 value="0" disabled>
     Frame: <nobr id="frameNumber">0</nobr>
   </div>
-
-  <div class="content">
-    <div class="left">
+        
+      </div>
+      <div class="content">
       <video id="video" hidden muted></video>        
       <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas>
-    </div>
-    <div class="right">
-      <canvas id="positionChart" style="border:1px solid #ccc" width="400" height="400"></canvas>
-      <canvas id="velocityChart" style="border:1px solid #ccc" width="400" height="400"></canvas>
-    </div>
+        
+       </div>
+		</div>
+    <div class="sidebar">
+      <div class="side-header">
+        Data
+      </div>
+      <button id="csv">Export data</button>
+<table style="border-spacing: 0;">
+  <tr>
+    <td>
+        Frame rate: 
+    </td><td>
+        <input id="fpsInput" class="no-spin" type="number" min="0.1" step="0.1" max="1000" style="width:60px" disabled>
+        </input> fps
+    </td><td>
+        <button id="showMediaInfo" disabled>Media info</button>
+        </td></tr>
+        <tr><td>
+        Scale:
+          </td><td>
+        <input id="scaleInput" type="text" style="width:60px" disabled>
+        </input> px/m
+      </td><td>
+        <button id="scale" disabled>Set scale</button>
+    </td></tr>
+  <tr><td>
+        Origin (x,y): (
+    </td><td>
+        <input id="originXInput" type="text" style="width:40px" disabled>
+        </input>,
+        <input id="originYInput" type="text" style="width:40px" disabled>
+        </input>) px
+  </td><td>
+        <button id="origin" disabled>Set origin</button>
+</td></tr>
+</table>
+      <canvas id="positionChart" style="border:1px solid #ccc" width="350" height="250"></canvas>
+      <canvas id="velocityChart" style="border:1px solid #ccc" width="350" height="250"></canvas>
   </div>
+
   
   
   <!-- The Modal boxes -->
@@ -64,10 +95,6 @@
   <div id="mediaInfoModal" class="modal">
     <div class="modal-content"> <span class="close">&times;</span>
       <h2>Video File Info</h2>
-      <div class="control">Frame rate (fps): 
-        <input id="fpsInput" type="number" min="0.1" step="0.1" max="1000" style="width:60px">
-        </input>
-      </div> 
       <!--textarea id="mediaInfoResult"></textarea-->
       <pre id="mediaInfoResult"></pre>
     </div>
