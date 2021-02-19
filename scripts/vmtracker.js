@@ -43,10 +43,10 @@
 
   // Settings. TODO let user modify it...
   let decimalSeparator = getDecimalSeparator();
-  let integrationTime = 1;
+  let integrationTime = 2;
 
   let scale1, scale2;
-  let pixelsPerMeter = 1000;
+  let pixelsPerMeter;
   let origin = {x: 0, y: 0}; // in pixels
 
   //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
@@ -95,37 +95,50 @@
                   "y origin [px]": toString(origin.y), 
                   "Scale [px/m]": toString(pixelsPerMeter)}  );
 
+    // Fill list with velocities and times
+    let velocities = [];
     rawData.forEach(function (item, index) {
-      let time = getTime( item.t );
-      let pos = getXYposition( item );
-      let firstIndex = Math.ceil(index-integrationTime/2);
-      let secondIndex = Math.ceil(index+integrationTime/2);
-      let velocity;
-      if( firstIndex >= 0 && secondIndex < rawData.length ) {
-        velocity = getVelocity(firstIndex, secondIndex);
+      if( index > integrationTime-1 ) {
+        let velocity = getVelocity(index - integrationTime, index);
+        let frame = (item.t + rawData[index-integrationTime].t)/2;
+        velocities.push({frame: frame, t: velocity.t, x: velocity.x, y: velocity.y});
       }
-      if( integrationTime%2 === 0 && velocity) {
+    });
+    
+    // Fill csvData with sequential times
+    let vIndex = 0;
+    rawData.forEach(function (item, index) {
+      let thisFrame = item.t;
+      let time = getTime( thisFrame );
+      let pos = getXYposition( item );
+
+      // add all velocities before this item
+      while( vIndex < velocities.length && 
+            velocities[vIndex].frame < thisFrame-0.01 ) {
+        // add only the velocity
+        csvData.push({"time [s]": toString( velocities[vIndex].t ), 
+                      "x velocity [m/s]": toString( velocities[vIndex].x ), 
+                      "y velocity [m/s]": toString( velocities[vIndex].y )}  );
+        ++vIndex;
+      }
+      // check if velocity has same frame number
+      if( vIndex < velocities.length && velocities[vIndex].frame - thisFrame < 0.01 ) { 
+        // combine items
         csvData.push({"time [s]": toString(time), 
                       "x position [m]": toString(pos.x), 
                       "y position [m]": toString(pos.y),
-                      "x velocity [m/s]": toString(velocity.x), 
-                      "y velocity [m/s]": toString(velocity.y)}  );        
-      } else {
+                      "x velocity [m/s]": toString(velocities[vIndex].x), 
+                      "y velocity [m/s]": toString(velocities[vIndex].y)}  );
+        ++vIndex;
+      } else { // add only the position
         csvData.push({"time [s]": toString(time), 
                       "x position [m]": toString(pos.x), 
-                      "y position [m]": toString(pos.y)}  );
-        if( velocity ) {
-          csvData.push({"time [s]": toString( velocity.t), 
-                        "x velocity [m/s]": toString(velocity.x), 
-                        "y velocity [m/s]": toString(velocity.y)}  );                  
-        }
+                      "y position [m]": toString(pos.y)}  );        
       }
-      
     });
 
     var csv = Papa.unparse( csvData, {quotes : true} );
     console.log(csv);
-    console.log(csvData);
 
     let filename = prompt("Save as...", videoName.substr(0, videoName.lastIndexOf('.'))+".csv");
     if (filename != null && filename != "") {
@@ -214,48 +227,71 @@
     enableVideoControl();
   });
   
+    
+  function blurOnEnter(e){ if(e.keyCode===13){ e.target.blur();} }
+  fpsInput.addEventListener("keydown",blurOnEnter);
+  originXInput.addEventListener("keydown",blurOnEnter);
+  originYInput.addEventListener("keydown",blurOnEnter);
+  scaleInput.addEventListener("keydown", blurOnEnter);
+
+
   // Update the frame rate (fps) when user gives input or when calculated
   fpsInput.onchange = function() {
-    if( this.value > 0 ) {
+
+    if( this.value > 0 && (rawData.length == 0 || 
+                           confirm("Changing this setting will remove your data. Are you sure?") ) ) {
       FPS = this.value;
-      //console.log("FPS = " + FPS + " duration = " + video.duration + " *= " + video.duration * FPS );
       slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
     
       // Always reset to first frame
       gotoFrame( 0 );
-      this.blur(); // remove focus
+      
+      // Clear data
+      rawData = [];
+      
+      // Update plots
+      updatePositionPlot();
+      updateVelocityPlot();
+    } else {
+      this.value = FPS;
     }
   }
 
   // Update the origin when user gives input or when calculated
-  originXInput.onchange = function() {
-    if( isNaN(this.value) ) {
-      this.value = "";
+  originXInput.onchange = function(evt) {
+    if( this.value ) {
+      origin.x = this.value ;
+      // Update plots
+      updatePositionPlot();
+      updateVelocityPlot();
     } else {
-      origin.x = this.value;  
-      this.blur(); // remove focus
+      this.value = origin.x;
     }
   }
   originYInput.onchange = function() {
-    if( isNaN(this.value) ) {
-      this.value = "";
-    } else {
+    if( this.value ) {
       origin.y = this.value;
-      this.blur(); // remove focus
+      // Update plots
+      updatePositionPlot();
+      updateVelocityPlot();
+    } else {
+      this.value = origin.y;
     }
   }
   
   // Update the origin when user gives input or when calculated
   scaleInput.onchange = function() {
-    if( isNaN(this.value) || +this.value <= 0 ) {
-      this.value = "";
-      this.style.background = 'pink';
-    } else {
+    if( this.value && this.value > 0 ) {
       pixelsPerMeter = this.value;
-      this.blur(); // remove focus
       this.style.background = '';
       // Enable video analysis
       enableAnalysis();
+      
+      // Update plots
+      updatePositionPlot();
+      updateVelocityPlot();
+    } else {
+      this.value = pixelsPerMeter;
     }
   }
   
@@ -376,9 +412,7 @@
 
             console.log(result);
             result.media.track.forEach(track => {
-              if( track["@type"] === "Video") {
-                console.log(track.FrameRate);
-                        
+              if( track["@type"] === "Video") {                        
                 // Set the new FPS
                 fpsInput.value = track.FrameRate;
                 fpsInput.onchange();
@@ -481,8 +515,8 @@
     // Update origin
     originXInput.value = posPx.x;
     originYInput.value = posPx.y;
-    originXInput.onchange();
-    originYInput.onchange();
+    //originXInput.onchange();
+    //originYInput.onchange();
     
     // Reset statusMsg and canvas click event
     canvasClick = "";
@@ -594,8 +628,7 @@
     let xVelocities = [];
     let yVelocities = [];
     rawData.forEach(function (item, index) {
-      if( index > integrationTime ) {
-        //let prevItem = rawData[ index-integrationTime ];
+      if( index > integrationTime-1 ) {
         let velocity = getVelocity(index - integrationTime, index);
         xVelocities.push( {x: velocity.t, y: velocity.x} );
         yVelocities.push( {x: velocity.t, y: velocity.y} );
@@ -624,7 +657,6 @@
 
   function gotoFrame(targetFrame) {
     let newTime = (targetFrame + 0.5)/FPS;
-    console.log(newTime);
     if( newTime < t0 ) {
       return false;
     } else if( newTime > video.duration ) {
