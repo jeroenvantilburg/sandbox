@@ -444,7 +444,7 @@
                 statusMsg.innerHTML = "";
               }
             } );
-        }, () => {statusMsg.innerHTML = "An error occured in mediainfo";})
+        })
           .catch((error) => {  
             statusMsg.innerHTML = `An error occured:\n${error.stack}`
         })
