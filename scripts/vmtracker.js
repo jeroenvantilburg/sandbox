@@ -449,7 +449,7 @@
             statusMsg.innerHTML = `An error occured:\n${error.stack}`
         })
       }
-    })
+    }, () => {statusMsg.innerHTML = "An error occured in mediainfo";} )
   }
   
   prevButton.addEventListener('click', evt => {
