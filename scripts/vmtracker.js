@@ -81,12 +81,16 @@
       locale = navigator.userLanguage || navigator.language || navigator.browserLanguage || 'en';
     }
 
+    console.log(locale);
+    console.log(Intl.NumberFormat(locale));
+    return ",";
+    
     // Format a number to get the decimal separator
-    const numberWithDecimalSeparator = 1.1;
-    return Intl.NumberFormat(locale)
-        .formatToParts(numberWithDecimalSeparator)
-        .find(part => part.type === 'decimal')
-        .value;
+    //const numberWithDecimalSeparator = 1.1;
+    //return Intl.NumberFormat(locale)
+    //    .formatToParts(numberWithDecimalSeparator)
+    //    .find(part => part.type === 'decimal')
+    //    .value;
   }
 
   
