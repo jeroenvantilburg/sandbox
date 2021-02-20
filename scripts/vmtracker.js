@@ -81,8 +81,10 @@
       locale = navigator.userLanguage || navigator.language || navigator.browserLanguage || 'en';
     }
 
+    const numberWithDecimalSeparator = 1.1;
+
     console.log(locale);
-    console.log(Intl.NumberFormat(locale));
+    console.log(Intl.NumberFormat(locale).formatToParts(numberWithDecimalSeparator));
     return ",";
     
     // Format a number to get the decimal separator
