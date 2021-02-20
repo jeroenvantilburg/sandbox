@@ -24,6 +24,8 @@
   let playButton     = document.getElementById('play');
   let nextButton     = document.getElementById('next');
   let slider         = document.getElementById('slider');
+  let zoomOut        = document.getElementById('zoomOut');
+  let zoomIn         = document.getElementById('zoomIn');
   let canvasOutput   = document.getElementById('canvasOutput');
   let canvasContext  = canvasOutput.getContext('2d');
   let frameCounter   = document.getElementById("frameNumber")  
@@ -52,9 +54,25 @@
   //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
   //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
   //videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";    
-    
+  
+  zoomOut.addEventListener('click', () => {
+    // TODO: Set minimum + scale to fit
+    drawVideo(0.5*canvasOutput.width, 0.5*canvasOutput.height)
+  });
+
+  zoomIn.addEventListener('click', () => {
+    // TODO: Set maximum
+    drawVideo(2*canvasOutput.width, 2*canvasOutput.height)
+  });
+
+  function drawVideo(canvasWidth, canvasHeight) {
+    if( canvasWidth ) canvasOutput.width = canvasWidth;
+    if( canvasHeight ) canvasOutput.height = canvasHeight;
+    canvasContext.drawImage(video,0,0, canvasOutput.width, canvasOutput.height );    
+  }
+  
+
   function getDecimalSeparator() {
-    
     // Get the locale for an estimate of the decimal separator
     let locale;
     if (navigator.languages && navigator.languages.length) {
@@ -211,9 +229,7 @@
     // Get the dimensions of the video and prepare the canvas
     width = video.videoWidth;
     height = video.videoHeight;
-    canvasOutput.width = width;
-    canvasOutput.height = height;
-    canvasContext.drawImage(video,0,0, width, height );
+    drawVideo(width, height);
     
     // Set initial origin to left bottom corner
     originXInput.value = 0;
@@ -329,7 +345,12 @@
 
   function enableAnalysis() {
     startAndStopManual.removeAttribute('disabled');
-    startAndStopAuto.removeAttribute('disabled');
+
+    // Automatic analysis only when openCV is ready
+    //document.getElementById('opencv').onload= () => onOpenCvReady();
+    //function onOpenCvReady() {
+      startAndStopAuto.removeAttribute('disabled');
+    //}
   }
 
   function disableAnalysis() {
@@ -337,14 +358,11 @@
     startAndStopAuto.setAttribute('disabled', '');
   }
 
-
-  
-  // Select video only when openCV is ready
-  document.getElementById('opencv').onload= () => onOpenCvReady();
-  function onOpenCvReady() {
-    videoInput.removeAttribute('disabled');
-  }
-
+  // load all code after the document
+  $("document").ready( () => {
+    videoInput.removeAttribute('disabled');    
+  });
+                      
   // Event listener for the modal boxes
   showMediaInfo.addEventListener('click', evt => {
     showModal("mediaInfoModal");
@@ -666,7 +684,8 @@
       video.currentTime = newTime;
       video.addEventListener("seeked", function(e) {
         e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
-        canvasContext.drawImage(video,0,0, width, height );
+        //canvasContext.drawImage(video,0,0, width, height );
+        drawVideo();
         frameCounter.innerHTML = frameNumber + " / " +slider.max;
         slider.value = frameNumber;
       });
@@ -675,10 +694,15 @@
   }
 
   function getMousePos(canvas, evt) {
-    var rect = canvas.getBoundingClientRect();
+    let rect = canvas.getBoundingClientRect();
+    let scaleX = canvas.width / width;    // relationship bitmap vs. element for X
+    let scaleY = canvas.height / height;  // relationship bitmap vs. element for Y
+
+    //console.log("scaleX= "+ scaleX+ " scale="+canvas.width/width );
+    
     return {
-      x: evt.clientX - rect.left,
-      y: evt.clientY - rect.top
+      x: (evt.clientX - rect.left)/scaleX,
+      y: (evt.clientY - rect.top)/scaleY
     };
   }
 
