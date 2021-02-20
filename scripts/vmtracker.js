@@ -82,10 +82,11 @@
     }
 
     const numberWithDecimalSeparator = 1.1;
+    return numberWithDecimalSeparator.toLocaleString(locale).substring(1, 2);
 
-    console.log(locale);
-    console.log(Intl.NumberFormat(locale).formatToParts(numberWithDecimalSeparator));
-    return ",";
+    //console.log(locale);
+    //console.log(Intl.NumberFormat(locale).formatToParts(numberWithDecimalSeparator));
+    //return ",";
     
     // Format a number to get the decimal separator
     //const numberWithDecimalSeparator = 1.1;
