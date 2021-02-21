@@ -16,6 +16,8 @@ const onChangeFile = (mediainfo) => {
   if (file) {
     output.value = 'Working…'
 
+    try{
+    
     const getSize = () => file.size
 
     const readChunk = (chunkSize, offset) =>
@@ -30,6 +32,7 @@ const onChangeFile = (mediainfo) => {
         reader.readAsArrayBuffer(file.slice(offset, offset + chunkSize))
       })
 
+    
     mediainfo
       .analyzeData(getSize, readChunk)
       .then((result) => {
@@ -45,7 +48,7 @@ const onChangeFile = (mediainfo) => {
         result.media.track.forEach(track => {
           if( track["@type"] === "Video") {
             console.log(track.FrameRate);
-            frameRate.innerHTML = "Frame rate = "+track.FrameRate;
+            frameRate.innerHTML = "Frame rate 1. = "+track.FrameRate;
           }
         } );
         
@@ -54,8 +57,11 @@ const onChangeFile = (mediainfo) => {
 
       })
       .catch((error) => {
-        output.value = `An error occured:\n${error.stack}`
+        frameRate.innerHTML = "An error occured:";
       })
+    } catch (ex) {
+      frameRate.innerHTML = "I caught an error!!! ;
+  }
   }
 }
 
