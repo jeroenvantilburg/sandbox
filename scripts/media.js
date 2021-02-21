@@ -58,7 +58,7 @@ const onChangeFile = (mediainfo) => {
       })
       .catch((error) => {
         frameRate.innerHTML = "An error occured:";
-      })
+      });
     } catch (ex) {
       frameRate.innerHTML = "I caught an error!!! ;
   }
