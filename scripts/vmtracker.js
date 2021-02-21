@@ -316,6 +316,10 @@
       
       // Video can be enabled
       enableVideoControl();
+      
+      // Remove status message
+      statusMsg.innerHTML = "";
+      
       this.style.background = '';
     } else {
       this.value = FPS;
@@ -490,7 +494,6 @@
                 // Set the new FPS
                 fpsInput.value = track.FrameRate;
                 fpsInput.onchange();
-                statusMsg.innerHTML = "";
                 showMediaInfo.removeAttribute("disabled");
               }
             } );
