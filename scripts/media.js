@@ -14,9 +14,10 @@ const inspect = obj => {
 const onChangeFile = (mediainfo) => {
   const file = fileinput.files[0]
   if (file) {
+    try{
+
     output.value = 'Working…'
 
-    //try{
     
     const getSize = () => file.size
 
@@ -36,8 +37,8 @@ const onChangeFile = (mediainfo) => {
     mediainfo
       .analyzeData(getSize, readChunk)
       .then((result) => {
-        //output.value = JSON.stringify(result, undefined, 4);
-        output.innerHTML = JSON.stringify(result, undefined, 4);
+        output.value = JSON.stringify(result, undefined, 4);
+        //output.innerHTML = JSON.stringify(result, undefined, 4);
 
         //console.log("Frame rate = " + result[1].frameRate);
         console.log(result);
@@ -59,9 +60,9 @@ const onChangeFile = (mediainfo) => {
       .catch((error) => {
         frameRate.innerHTML = "An error occured:";
       });
-    //} catch (ex) {
-      //frameRate.innerHTML = "I caught an error!!! ;
-  //}
+    } catch (ex) {
+      frameRate.innerHTML = "I caught an error!!!" ;
+  }
   }
 }
 
