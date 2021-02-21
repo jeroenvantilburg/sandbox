@@ -86,6 +86,9 @@
     if( canvasWidth ) canvasOutput.width = canvasWidth;
     if( canvasHeight ) canvasOutput.height = canvasHeight;
     //canvasContext.drawImage(video,0,0, canvasOutput.width, canvasOutput.height );    
+    if( canvasWidth ) video.width = canvasWidth;
+    if( canvasHeight ) video.height = canvasHeight;
+
   }
   
 
