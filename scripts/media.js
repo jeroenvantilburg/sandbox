@@ -16,7 +16,7 @@ const onChangeFile = (mediainfo) => {
   if (file) {
     output.value = 'Working…'
 
-    try{
+    //try{
     
     const getSize = () => file.size
 
@@ -59,9 +59,9 @@ const onChangeFile = (mediainfo) => {
       .catch((error) => {
         frameRate.innerHTML = "An error occured:";
       });
-    } catch (ex) {
-      frameRate.innerHTML = "I caught an error!!! ;
-  }
+    //} catch (ex) {
+      //frameRate.innerHTML = "I caught an error!!! ;
+  //}
   }
 }
 
