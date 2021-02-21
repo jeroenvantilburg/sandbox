@@ -263,6 +263,9 @@
   // Add event listener when the video is loaded
   video.addEventListener('loadedmetadata', () => {
 
+    // Pause the video (needed because of autoplay)
+    video.pause();
+
     // Get the dimensions of the video and prepare the canvas
     width = video.videoWidth;
     height = video.videoHeight;
