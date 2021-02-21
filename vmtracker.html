@@ -14,7 +14,10 @@
 
   <input id="videoInput" type="file" accept="video/*,.mkv" disabled/>
   &nbsp;&nbsp;<nobr id="statusMsg"></nobr>
-  
+        <button id="showAbout"><i class="fa fa-vcard"></i></button>
+        <button id="showHelp"><i class="fa fa-info"></i> Help</button>
+        <button id="showSettings"><i class="fa fa-cogs"></i> Settings</button>
+               
   <div class="control">
     <button id="startAndStopAuto" disabled>Automatic</button>
     <button id="startAndStopManual" disabled>Manual</button>
@@ -26,24 +29,33 @@
     <button id="next" disabled><i class="fa fa-step-forward"></i></button>
     <input id="slider" type="range" min="0" max="100" step=1 value="0" disabled>
     Frame: <nobr id="frameNumber">0</nobr>
-    <button id="zoomOut"><i class="fa fa-search-minus"></i></button>
-    <button id="zoomIn"><i class="fa fa-search-plus"></i></button>
+    <button id="zoomOut" disabled><i class="fa fa-search-minus"></i></button>
+    <button id="zoomIn" disabled><i class="fa fa-search-plus"></i></button>
   </div>
         
       </div>
       <div class="content">
-      <!--video id="video" hidden muted></video-->        
-      <video id="video" autoplay playsinline muted style="display:none" width="0.1"></video>
-
-        <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas>
+      <!--video id="video" hidden muted></video-->       
         
+        <!--video id="video" autoplay playsinline muted style="display:none"></video>
+        <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas-->
+        
+        <!-- Check if this works on iphone -->
+        <div class="container" style="position:relative">
+         <video id="video" playsinline muted style="display:block"></video>
+         <canvas style="position:absolute;top:0px;border:0px solid #ccc" id="canvasOutput"></canvas>
+        </div>
+          
        </div>
 		</div>
     <div class="sidebar">
       <div class="side-header">
         Data
       </div>
-      <button id="csv">Export data</button>
+      <button id="csvExport"><i class="fa fa-download"></i> Export data</button>
+      <button id="csvImport"><i class="fa fa-upload"></i> Import data</button>
+      <button id="deleteData"><i class="fa fa-trash-o"></i></button>
+      
 <table style="border-spacing: 0;">
   <tr>
     <td>
@@ -80,7 +92,7 @@
   
   
   <!-- The Modal boxes -->
-  <div id="about" class="modal">
+  <div id="aboutModal" class="modal">
     <div class="modal-content modal-small"> <span class="close">&times;</span>
       <center>
         <h3>Video Motion Tracker (VMTracker)</h3>
@@ -95,6 +107,56 @@
       </center>
     </div>
   </div>
+
+  <div id="helpModal" class="modal">
+    <div class="modal-content"> <span class="close">&times;</span>
+      <h2>Help</h2>
+      <b>General</b><br/>
+      javascript-application for schools
+      Security/privacy:
+      no data leaves your computer. No cookies
+      <br/><br/>
+        
+      <b>Instructions</b><br/>
+      ...
+
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal">
+    <div class="modal-content"> <span class="close">&times;</span>
+      <h2>Settings</h2>
+      <b>General</b><br/>
+      ....
+      <br/><br/>
+        
+      <b>Velocity calculation</b><br/>
+      Integration time:
+      <input id="integrationTimeInput" class="no-spin" type="number" min="1" step="1" max="10" 
+             style="width:60px"></input>
+    <br/>
+      ....
+      <br/><br/>
+
+      <b>CSV settings</b><br/>
+      <label for="decimalSep">Decimal separator: </label>
+    <select id="decimalSeparatorInput" name="decimalSep">
+      <option value=".">.</option>
+      <option value=",">,</option>
+    </select><br/>
+      <label for="delimiter">Delimiter: </label>
+    <select id="delimiterInput" name="delimiter">
+      <option value=",">,</option>
+      <option value="tab">tab</option>
+      <option value=";">;</option>
+      <option value=" ">space</option>
+    </select>
+
+    
+    </div>
+  </div>
+
+
 
   <div id="mediaInfoModal" class="modal">
     <div class="modal-content"> <span class="close">&times;</span>

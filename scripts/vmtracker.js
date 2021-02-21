@@ -46,6 +46,7 @@
   // Settings. TODO let user modify it...
   let decimalSeparator = getDecimalSeparator();
   let integrationTime = 2;
+  let delimiter = ",";
 
   let scale1, scale2;
   let pixelsPerMeter;
@@ -54,6 +55,22 @@
   //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
   //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
   //videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";    
+  
+  $("#integrationTimeInput").val( integrationTime );
+  $("#integrationTimeInput").on("keydown",blurOnEnter);
+  $("#integrationTimeInput").change( function() { 
+    integrationTime = parseInt( this.value );
+    updateVelocityPlot();
+  });
+
+  $("#decimalSeparatorInput").val( decimalSeparator );
+  $("#decimalSeparatorInput").on("keydown",blurOnEnter);
+  $("#decimalSeparatorInput").change( function() { decimalSeparator = this.value ; });
+
+  $("#delimiterInput").val( delimiter );
+  $("#delimiterInput").on("keydown",blurOnEnter);
+  $("#delimiterInput").change( function() { delimiter = this.value ; });
+
   
   zoomOut.addEventListener('click', () => {
     // TODO: Set minimum + scale to fit
@@ -68,7 +85,7 @@
   function drawVideo(canvasWidth, canvasHeight) {
     if( canvasWidth ) canvasOutput.width = canvasWidth;
     if( canvasHeight ) canvasOutput.height = canvasHeight;
-    canvasContext.drawImage(video,0,0, canvasOutput.width, canvasOutput.height );    
+    //canvasContext.drawImage(video,0,0, canvasOutput.width, canvasOutput.height );    
   }
   
 
@@ -105,10 +122,22 @@
     return parseFloat( string.replace(',','.') );
   }
 
+  
+  $("#deleteData").click( () => { 
+    if( dataCanBeRemoved () ) {
+      rawData = [];
+      // Update plots
+      updatePositionPlot();
+      updateVelocityPlot();
+    }
+  });
 
-  // Event listener for download button
-  let csvButton     = document.getElementById('csv');
-  csvButton.addEventListener('click', () => {
+  // Event listener for export button
+  let csvExport     = document.getElementById('csvExport');
+  csvExport.addEventListener('click', () => {
+    
+    // Check if there is data to be written
+    if( rawData.length === 0 ) return;
         
     let csvData = [];
 
@@ -162,7 +191,8 @@
       }
     });
 
-    var csv = Papa.unparse( csvData, {quotes : true} );
+    var csv = Papa.unparse( csvData, {quotes : true, 
+                                      delimiter : delimiter === "tab" ? "\t" : delimiter } );
     console.log(csv);
 
     let filename = prompt("Save as...", videoName.substr(0, videoName.lastIndexOf('.'))+".csv");
@@ -247,7 +277,6 @@
     console.log("Resolution: " + width.toString() + " x " + height.toString() );
     console.log("Duration: " + video.duration );
 
-    enableVideoControl();
   });
   
     
@@ -258,11 +287,15 @@
   scaleInput.addEventListener("keydown", blurOnEnter);
 
 
+  function dataCanBeRemoved() {
+    return (rawData.length == 0 || 
+           confirm("This will clear your current data (positions and velocities). Are you sure?") );
+  }
+  
   // Update the frame rate (fps) when user gives input or when calculated
   fpsInput.onchange = function() {
 
-    if( this.value > 0 && (rawData.length == 0 || 
-                           confirm("Changing this setting will remove your data. Are you sure?") ) ) {
+    if( this.value > 0 && dataCanBeRemoved() ) {
       FPS = this.value;
       slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
     
@@ -275,6 +308,10 @@
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
+      
+      // Video can be enabled
+      enableVideoControl();
+      this.style.background = '';
     } else {
       this.value = FPS;
     }
@@ -330,7 +367,9 @@
     prevButton.removeAttribute('disabled');
     playButton.removeAttribute('disabled');
     nextButton.removeAttribute('disabled');
-    slider.removeAttribute('disabled'); 
+    slider.removeAttribute('disabled');
+    zoomIn.removeAttribute('disabled');
+    zoomOut.removeAttribute('disabled');
     
     scaleInput.style.background = 'pink';
   }
@@ -348,6 +387,10 @@
     playButton.setAttribute('disabled', '');
     nextButton.setAttribute('disabled', '');
     slider.setAttribute('disabled', '');  
+    zoomIn.setAttribute('disabled', '');  
+    zoomOut.setAttribute('disabled', '');  
+
+    fpsInput.style.background = 'pink';
   }
 
   function enableAnalysis() {
@@ -374,6 +417,9 @@
   showMediaInfo.addEventListener('click', evt => {
     showModal("mediaInfoModal");
   });
+  $("#showAbout").click( evt => { showModal("aboutModal");} );
+  $("#showHelp").click( evt => { showModal("helpModal");} );
+  $("#showSettings").click( evt => { showModal("settingsModal");} );
 
   /* Define functions for the modal box */
   let currentModal = "";
@@ -465,7 +511,6 @@
   
   var playIntervalID=0;
   $('#play').click(function() {
-    console.log("tot hier");
     $(this).find('.fa-play,.fa-pause').toggleClass('fa-pause').toggleClass('fa-play');
     if ( playing === false ) {
       playing = true;
