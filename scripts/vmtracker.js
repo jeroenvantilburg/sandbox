@@ -362,7 +362,6 @@
   
   // Enable the video control buttons
   function enableVideoControl() {
-    showMediaInfo.removeAttribute("disabled");
     originButton.removeAttribute('disabled');
     originXInput.removeAttribute('disabled');
     originYInput.removeAttribute('disabled');
@@ -492,6 +491,7 @@
                 fpsInput.value = track.FrameRate;
                 fpsInput.onchange();
                 statusMsg.innerHTML = "";
+                showMediaInfo.removeAttribute("disabled");
               }
             } );
         })
