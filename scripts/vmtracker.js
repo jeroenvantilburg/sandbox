@@ -225,16 +225,12 @@
     disableAnalysis();
     disableVideoControl();
 
-
     // Get the file
     let URL = window.URL || window.webkitURL;
     let file = this.files[0];
     video.src = URL.createObjectURL(file);
     videoName = file.name;
     
-    // Get the frame rate
-    getFPS();
-
   }, false);
   
   // video playback failed - show a message saying why
@@ -279,6 +275,12 @@
 
     console.log("Resolution: " + width.toString() + " x " + height.toString() );
     console.log("Duration: " + video.duration );
+
+    // Enable manually setting frame rate
+    fpsInput.removeAttribute("disabled");
+    
+    // Get the frame rate
+    getFPS();
 
   });
   
@@ -361,7 +363,6 @@
   // Enable the video control buttons
   function enableVideoControl() {
     showMediaInfo.removeAttribute("disabled");
-    fpsInput.removeAttribute("disabled");
     originButton.removeAttribute('disabled');
     originXInput.removeAttribute('disabled');
     originYInput.removeAttribute('disabled');
