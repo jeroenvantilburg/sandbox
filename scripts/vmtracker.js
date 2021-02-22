@@ -335,7 +335,7 @@
   // Update the origin when user gives input or when calculated
   originXInput.onchange = function(evt) {
     if( this.value ) {
-      origin.x = this.value ;
+      origin.x = parseFloat(this.value) ;
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
@@ -345,7 +345,7 @@
   }
   originYInput.onchange = function() {
     if( this.value ) {
-      origin.y = this.value;
+      origin.y = parseFloat(this.value);
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
