@@ -307,7 +307,7 @@
   fpsInput.onchange = function() {
 
     if( this.value > 0 && dataCanBeRemoved() ) {
-      FPS = this.value;
+      FPS = parseFloat(this.value);
       slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
     
       // Always reset to first frame
@@ -357,7 +357,7 @@
   // Update the origin when user gives input or when calculated
   scaleInput.onchange = function() {
     if( this.value && this.value > 0 ) {
-      pixelsPerMeter = this.value;
+      pixelsPerMeter = parseFloat( this.value );
       this.style.background = '';
       // Enable video analysis
       enableAnalysis();
