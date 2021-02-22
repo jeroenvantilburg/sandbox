@@ -101,10 +101,11 @@
       locale = navigator.userLanguage || navigator.language || navigator.browserLanguage || 'en';
     }
 
+    console.log(locale);
+
     const numberWithDecimalSeparator = 1.1;
     return numberWithDecimalSeparator.toLocaleString(locale).substring(1, 2);
 
-    //console.log(locale);
     //console.log(Intl.NumberFormat(locale).formatToParts(numberWithDecimalSeparator));
     //return ",";
     
@@ -468,7 +469,7 @@
   }
   
   function getFPS() {
-    statusMsg.innerHTML = "Calculating FPS... "
+    statusMsg.innerHTML = "Calculating FPS... <i class='fa fa-spinner fa-spin fa-fw'></i>"
     
     MediaInfo({ format: 'object' }, (mediainfo) => {
       const file = videoInput.files[0];
