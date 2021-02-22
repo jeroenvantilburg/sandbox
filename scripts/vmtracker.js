@@ -118,7 +118,7 @@
   }
 
   
-  function toString(number){
+  function toCSV(number) {
     // Store numbers to 6 digits precision
     return number.toPrecision(6).toString().replace('.',decimalSeparator);
   }
@@ -149,10 +149,10 @@
     // first line contains headers and meta data
     csvData.push({"time [s]": "", "x position [m]": "", "y position [m]": "",
                   "x velocity [m/s]": "", "y velocity [m/s]": "",
-                  "Frame rate [Hz]": toString(FPS), 
-                  "x origin [px]": toString(origin.x), 
-                  "y origin [px]": toString(origin.y), 
-                  "Scale [px/m]": toString(pixelsPerMeter)}  );
+                  "Frame rate [Hz]": toCSV(FPS), 
+                  "x origin [px]": toCSV(origin.x), 
+                  "y origin [px]": toCSV(origin.y), 
+                  "Scale [px/m]": toCSV(pixelsPerMeter)}  );
 
     // Fill list with velocities and times
     let velocities = [];
@@ -175,24 +175,24 @@
       while( vIndex < velocities.length && 
             velocities[vIndex].frame < thisFrame-0.01 ) {
         // add only the velocity
-        csvData.push({"time [s]": toString( velocities[vIndex].t ), 
-                      "x velocity [m/s]": toString( velocities[vIndex].x ), 
-                      "y velocity [m/s]": toString( velocities[vIndex].y )}  );
+        csvData.push({"time [s]": toCSV( velocities[vIndex].t ), 
+                      "x velocity [m/s]": toCSV( velocities[vIndex].x ), 
+                      "y velocity [m/s]": toCSV( velocities[vIndex].y )}  );
         ++vIndex;
       }
       // check if velocity has same frame number
       if( vIndex < velocities.length && velocities[vIndex].frame - thisFrame < 0.01 ) { 
         // combine items
-        csvData.push({"time [s]": toString(time), 
-                      "x position [m]": toString(pos.x), 
-                      "y position [m]": toString(pos.y),
-                      "x velocity [m/s]": toString(velocities[vIndex].x), 
-                      "y velocity [m/s]": toString(velocities[vIndex].y)}  );
+        csvData.push({"time [s]": toCSV(time), 
+                      "x position [m]": toCSV(pos.x), 
+                      "y position [m]": toCSV(pos.y),
+                      "x velocity [m/s]": toCSV(velocities[vIndex].x), 
+                      "y velocity [m/s]": toCSV(velocities[vIndex].y)}  );
         ++vIndex;
       } else { // add only the position
-        csvData.push({"time [s]": toString(time), 
-                      "x position [m]": toString(pos.x), 
-                      "y position [m]": toString(pos.y)}  );        
+        csvData.push({"time [s]": toCSV(time), 
+                      "x position [m]": toCSV(pos.x), 
+                      "y position [m]": toCSV(pos.y)}  );        
       }
     });
 
