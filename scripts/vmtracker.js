@@ -119,6 +119,7 @@
 
   
   function toCSV(number) {
+    console.log(number);
     // Store numbers to 6 digits precision
     return number.toPrecision(6).toString().replace('.',decimalSeparator);
   }
