@@ -119,7 +119,8 @@
 
   
   function toString(number){
-    return number.toString().replace('.',decimalSeparator);
+    // Store numbers to 6 digits precision
+    return number.toPrecision(6).toString().replace('.',decimalSeparator);
   }
 
   function toNumber(string){
