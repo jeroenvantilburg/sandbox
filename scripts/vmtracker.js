@@ -138,9 +138,19 @@
     }
   });
 
+  // Settings for CSV
+  let timeStr  = "time [s]";
+  let posXStr  = "x position [m]";
+  let posYStr  = "y position [m]";
+  let velXStr  = "x velocity [m/s]";
+  let velYStr  = "y velocity [m/s]";
+  let fpsStr   = "Frame rate [Hz]";
+  let origXStr = "x origin [px]";
+  let origYStr = "y origin [px]";
+  let scaleStr = "Scale [px/m]";
+  
   // Event listener for export button
-  let csvExport     = document.getElementById('csvExport');
-  csvExport.addEventListener('click', () => {
+  $("#csvExport").click( () => {
     
     // Check if there is data to be written
     if( rawData.length === 0 ) return;
@@ -148,12 +158,9 @@
     let csvData = [];
 
     // first line contains headers and meta data
-    csvData.push({"time [s]": "", "x position [m]": "", "y position [m]": "",
-                  "x velocity [m/s]": "", "y velocity [m/s]": "",
-                  "Frame rate [Hz]": toCSV(FPS), 
-                  "x origin [px]": toCSV(origin.x), 
-                  "y origin [px]": toCSV(origin.y), 
-                  "Scale [px/m]": toCSV(pixelsPerMeter)}  );
+    csvData.push({[timeStr]: "", [posXStr]: "", [posYStr]: "", [velXStr]: "", [velYStr]: "",
+                  [fpsStr]: toCSV(FPS), [origXStr]: toCSV(origin.x), [origYStr]: toCSV(origin.y), 
+                  [scaleStr]: toCSV(pixelsPerMeter)}  );
 
     // Fill list with velocities and times
     let velocities = [];
@@ -176,24 +183,24 @@
       while( vIndex < velocities.length && 
             velocities[vIndex].frame < thisFrame-0.01 ) {
         // add only the velocity
-        csvData.push({"time [s]": toCSV( velocities[vIndex].t ), 
-                      "x velocity [m/s]": toCSV( velocities[vIndex].x ), 
-                      "y velocity [m/s]": toCSV( velocities[vIndex].y )}  );
+        csvData.push({[timeStr]: toCSV( velocities[vIndex].t ), 
+                      [velXStr]: toCSV( velocities[vIndex].x ), 
+                      [velYStr]: toCSV( velocities[vIndex].y )}  );
         ++vIndex;
       }
       // check if velocity has same frame number
       if( vIndex < velocities.length && velocities[vIndex].frame - thisFrame < 0.01 ) { 
         // combine items
-        csvData.push({"time [s]": toCSV(time), 
-                      "x position [m]": toCSV(pos.x), 
-                      "y position [m]": toCSV(pos.y),
-                      "x velocity [m/s]": toCSV(velocities[vIndex].x), 
-                      "y velocity [m/s]": toCSV(velocities[vIndex].y)}  );
+        csvData.push({[timeStr]: toCSV(time), 
+                      [posXStr]: toCSV(pos.x), 
+                      [posYStr]: toCSV(pos.y),
+                      [velXStr]: toCSV(velocities[vIndex].x), 
+                      [velYStr]: toCSV(velocities[vIndex].y)}  );
         ++vIndex;
       } else { // add only the position
-        csvData.push({"time [s]": toCSV(time), 
-                      "x position [m]": toCSV(pos.x), 
-                      "y position [m]": toCSV(pos.y)}  );        
+        csvData.push({[timeStr]: toCSV(time), 
+                      [posXStr]: toCSV(pos.x), 
+                      [posYStr]: toCSV(pos.y)}  );        
       }
     });
 
@@ -208,6 +215,95 @@
 
   });
 
+  
+  function isNumeric(str) {
+    if (typeof str != "string") return false; // we only process strings!  
+    let string = str.replace(',','.')
+    return !isNaN(string) && // use type coercion to parse the _entirety_ of the string
+           !isNaN(parseFloat(string)) // ...and ensure strings of whitespace fail
+  }
+  
+  $("#csvImport").click( () => {
+    if( dataCanBeRemoved() ) {      
+      // Progagate to hidden DOM element
+      $("#csvInput").click();
+    }
+  });
+  
+  // Add event listener for when file is selected
+  $("#csvInput").change( function() {
+    // Get the file
+    let file = this.files[0];    
+    Papa.parse(file, {
+      header: true,
+      complete: function(results) {
+        console.log(results.data);
+        // TODO: fps disabled?
+        
+        // check header integrety
+        if( results.data.length > 0 &&
+            isNumeric( results.data[0][fpsStr]   ) &&
+            isNumeric( results.data[0][origXStr] )  &&
+            isNumeric( results.data[0][origYStr] ) &&
+            isNumeric( results.data[0][scaleStr] ) ) {
+
+          rawData = []; // Clear old data
+
+          // Update the header info
+          let meta = results.data[0];
+          fpsInput.value = toNumber( meta[fpsStr] );
+          fpsInput.onchange();
+          originXInput.value = toNumber( meta[origXStr] );
+          originYInput.value = toNumber( meta[origYStr] );
+          originXInput.onchange();
+          originYInput.onchange();
+          scaleInput.value = toNumber( meta[scaleStr] );
+          scaleInput.onchange();
+
+          // Add raw data
+          for(let i=1; i<results.data.length; ++i ){
+            let item = results.data[i];
+
+            // check not empty
+            if( isNumeric(item[timeStr]) && isNumeric(item[posXStr]) && isNumeric(item[posYStr]) ) {
+              let time = Math.floor( toNumber(item[timeStr])*FPS );
+              let xPos = origin.x + toNumber(item[posXStr])*pixelsPerMeter;
+              let yPos = origin.y - toNumber(item[posYStr])*pixelsPerMeter;
+              let rawDataPoint = {t: time, x: xPos, y: yPos };  
+
+              console.log(rawDataPoint );
+              addRawData( rawDataPoint );
+            }
+          }
+           
+          // Update plots
+          updatePositionPlot();
+          updateVelocityPlot();
+        } else {
+          // Remove status message
+          statusMsg.innerHTML = "Error loading csv file: header information not complete";
+        }
+      }
+    });
+    
+  });
+
+
+  function printStats(msg)
+{
+	if (msg)
+		console.log(msg);
+	console.log("       Time:", (end-start || "(Unknown; your browser does not support the Performance API)"), "ms");
+	console.log("  Row count:", rowCount);
+	if (stepped)
+		console.log("    Stepped:", stepped);
+	console.log("     Errors:", errorCount);
+	if (errorCount)
+		console.log("First error:", firstError);
+}
+
+
+  
 
   // Create an invisible download element
   function download(filename, text) {
@@ -598,8 +694,8 @@
     // Update origin
     originXInput.value = posPx.x;
     originYInput.value = posPx.y;
-    //originXInput.onchange();
-    //originYInput.onchange();
+    originXInput.onchange();
+    originYInput.onchange();
     
     // Reset statusMsg and canvas click event
     canvasClick = "";
@@ -680,11 +776,10 @@
   }
 
   function addRawData( rawDataPoint ) {
-    let thisIndex = rawData.findIndex(entry => entry.t >= frameNumber);
+    let thisIndex = rawData.findIndex(entry => entry.t >= rawDataPoint.t );
     if( thisIndex < 0 ) { // insert at the end 
-      thisItem = rawData.length;
       rawData.push( rawDataPoint );
-    } else if ( rawData[thisIndex].t === frameNumber ) { // update
+    } else if ( rawData[thisIndex].t === rawDataPoint.t ) { // update
       rawData[thisIndex] = rawDataPoint;
     } else { // insert point at index
       rawData.splice(thisIndex, 0, rawDataPoint );
