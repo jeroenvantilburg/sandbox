@@ -118,10 +118,10 @@
   }
 
   
-  function toCSV(number) {
+  function toCSV(number, precision = 6) {
     console.log(number);
     // Store numbers to 6 digits precision
-    return number.toPrecision(6).toString().replace('.',decimalSeparator);
+    return number.toPrecision(precision).toString().replace('.',decimalSeparator);
   }
 
   function toNumber(string){
@@ -335,7 +335,7 @@
   // Update the origin when user gives input or when calculated
   originXInput.onchange = function(evt) {
     if( this.value ) {
-      origin.x = parseFloat(this.value) ;
+      origin.x = parseFloat( this.value ) ;
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
@@ -345,7 +345,7 @@
   }
   originYInput.onchange = function() {
     if( this.value ) {
-      origin.y = parseFloat(this.value);
+      origin.y = parseFloat( this.value );
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
