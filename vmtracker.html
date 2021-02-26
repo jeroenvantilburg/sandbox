@@ -4,7 +4,8 @@
   <title>Video Motion Tracker</title>
   <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="style_vmt.css" media="screen,projection" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" 
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>  
 <body>
   <div class="header"><i class="fa fa-film"></i> Video Motion Tracker</div>
@@ -12,41 +13,40 @@
     <div class="main">  
 	  	<div class="page-header">
 
-  <input id="videoInput" type="file" accept="video/*,.mkv" disabled/>
-  &nbsp;&nbsp;<nobr id="statusMsg"></nobr>
+        <button id="videoImport" disabled><i class="fa fa-upload"></i> Upload video</button>
+        <input id="videoInput" type="file" accept="video/*,.mkv" hidden/>
+        &nbsp;&nbsp;<nobr id="statusMsg"></nobr>
         <button id="showAbout"><i class="fa fa-vcard"></i></button>
         <button id="showHelp"><i class="fa fa-info"></i> Help</button>
         <button id="showSettings"><i class="fa fa-cogs"></i> Settings</button>
                
-  <div class="control">
-    <button id="startAndStopAuto" disabled>Automatic</button>
-    <button id="startAndStopManual" disabled>Manual</button>
-  </div>
+        <div class="control">
+          <button id="startAndStopAuto" disabled>Automatic</button>
+          <button id="startAndStopManual" disabled>Manual</button>
+        </div>
 
-  <div class="center">
-    <button id="prev" disabled><i class="fa fa-step-backward"></i></button>
-    <button id="play" disabled><i class="fa fa-play"></i></button>
-    <button id="next" disabled><i class="fa fa-step-forward"></i></button>
-    <input id="slider" type="range" min="0" max="100" step=1 value="0" disabled>
-    Frame: <nobr id="frameNumber">0</nobr>
-    <button id="zoomOut" disabled><i class="fa fa-search-minus"></i></button>
-    <button id="zoomIn" disabled><i class="fa fa-search-plus"></i></button>
-  </div>
-        
+        <div class="center">
+          <button id="prev" disabled><i class="fa fa-step-backward"></i></button>
+          <button id="play" disabled><i class="fa fa-play"></i></button>
+          <button id="next" disabled><i class="fa fa-step-forward"></i></button>
+          <input id="slider" type="range" min="0" max="100" step=1 value="0" disabled>
+          Frame: <nobr id="frameNumber">0 / 0</nobr>
+          <button id="zoomOut" disabled><i class="fa fa-search-minus"></i></button>
+          <button id="zoomIn" disabled><i class="fa fa-search-plus"></i></button>
+        </div>
       </div>
       <div class="content">
-      <!--video id="video" hidden muted></video-->       
+        <!--video id="video" hidden muted></video-->       
         
         <!--video id="video" autoplay playsinline muted style="display:none"></video>
         <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas-->
         
         <!-- Check if this works on iphone -->
         <div class="container" style="position:relative">
-         <video id="video" autoplay playsinline muted style="display:block"></video>
-         <canvas style="position:absolute;top:0px;border:0px solid #ccc" id="canvasOutput"></canvas>
-        </div>
-          
-       </div>
+          <video id="video" autoplay playsinline muted style="display:block"></video>
+          <canvas style="position:absolute;top:0;border:0px solid #ccc" id="canvasOutput"></canvas>
+        </div>    
+      </div>
 		</div>
     <div class="sidebar">
       <div class="side-header">
@@ -57,40 +57,28 @@
       <input id="csvInput" type="file" hidden>
       <button id="deleteData"><i class="fa fa-trash-o"></i></button>
       
-<table style="border-spacing: 0;">
-  <tr>
-    <td>
-        Frame rate: 
-    </td><td>
-        <input id="fpsInput" class="no-spin" type="number" min="0.1" step="0.1" max="1000" style="width:60px" disabled>
-        </input> fps
-    </td><td>
-        <button id="showMediaInfo" disabled>Media info</button>
-        </td></tr>
-        <tr><td>
-        Scale:
-          </td><td>
-        <input id="scaleInput" class="no-spin" type="number" style="width:60px" disabled>
-        </input> px/m
-      </td><td>
-        <button id="scale" disabled>Set scale</button>
-    </td></tr>
-  <tr><td>
-        Origin (x,y): (
-    </td><td>
-        <input id="originXInput" class="no-spin" type="number" style="width:40px" disabled>
-        </input>,
-        <input id="originYInput" class="no-spin" type="number" style="width:40px" disabled>
-        </input>) px
-  </td><td>
-        <button id="origin" disabled>Set origin</button>
-</td></tr>
-</table>
+      <table style="border-spacing: 0;">
+        <tr>
+          <td>Frame rate:</td>
+          <td><input id="fpsInput" type="text" style="width:60px"></input> fps</td>
+          <td><button id="showMediaInfo" disabled>Media info</button></td>
+        </tr>
+        <tr>
+          <td>Scale:</td>
+          <td><input id="scaleInput" type="text" style="width:60px"></input> px/m</td>
+          <td><button id="scale" disabled>Set scale</button></td>
+        </tr>
+        <tr>
+          <td>Origin (x,y): (</td>
+          <td><input id="originXInput" type="text" style="width:40px"></input>,
+              <input id="originYInput" type="text" style="width:40px"></input>) px</td>
+          <td><button id="origin" disabled>Set origin</button></td>
+        </tr>
+      </table>
       <canvas id="positionChart" style="border:1px solid #ccc" width="350" height="250"></canvas>
       <canvas id="velocityChart" style="border:1px solid #ccc" width="350" height="250"></canvas>
+    </div>
   </div>
-
-  
   
   <!-- The Modal boxes -->
   <div id="aboutModal" class="modal">
@@ -133,8 +121,8 @@
         
       <b>Velocity calculation</b><br/>
       Integration time:
-      <input id="integrationTimeInput" class="no-spin" type="number" min="1" step="1" max="10" 
-             style="width:60px"></input>
+      <input id="integrationTimeInput" type="number" min="1" step="1" max="10" style="width:60px">
+      </input>
     <br/>
       ....
       <br/><br/>

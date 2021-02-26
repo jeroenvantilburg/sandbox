@@ -38,7 +38,7 @@
   let width = 0;
   let height = 0;
   let frameNumber = 0;
-  let FPS = 0.0;
+  let FPS;
   let t0 = 0.0;
   let rawData = [];
   let videoName = "";
@@ -50,17 +50,16 @@
 
   let scale1, scale2;
   let pixelsPerMeter;
-  let origin = {x: 0, y: 0}; // in pixels
+  let originX, originY; // in pixels
 
-  //videoInput.src = "file:///Users/jeroen/Downloads/IMG_9460.MOV";
-  //videoInput.src = "file:///Users/jeroen/Downloads/time.mp4";
-  //videoInput.src = "file:///Users/jeroen/Downloads/cup.mp4";    
-  
   $("#integrationTimeInput").val( integrationTime );
   $("#integrationTimeInput").on("keydown",blurOnEnter);
-  $("#integrationTimeInput").change( function() { 
-    integrationTime = parseInt( this.value );
-    updateVelocityPlot();
+  $("#integrationTimeInput").change( function() {
+    if( isNumeric(this.value) && toNumber(this.value) > 0.5) {
+      integrationTime = Math.round( toNumber(this.value) );
+      updateVelocityPlot(); 
+    }
+    this.value = integrationTime || "";
   });
 
   $("#decimalSeparatorInput").val( decimalSeparator );
@@ -73,13 +72,16 @@
 
   
   zoomOut.addEventListener('click', () => {
-    // TODO: Set minimum + scale to fit
-    drawVideo(0.5*canvasOutput.width, 0.5*canvasOutput.height)
+    if( canvasOutput.width > 200 ) { // minimum 200 px should be small enough
+      drawVideo(0.5*canvasOutput.width, 0.5*canvasOutput.height);
+    }
   });
 
   zoomIn.addEventListener('click', () => {
-    // TODO: Set maximum
-    drawVideo(2*canvasOutput.width, 2*canvasOutput.height)
+    //console.log("zoom: " + canvasOutput.width / width );
+    if( canvasOutput.width < 8 * width ) { // Maximum zoom x8
+      drawVideo(2*canvasOutput.width, 2*canvasOutput.height)
+    }
   });
 
   function drawVideo(canvasWidth, canvasHeight) {
@@ -87,7 +89,7 @@
     if( canvasHeight ) canvasOutput.height = canvasHeight;
     //canvasContext.drawImage(video,0,0, canvasOutput.width, canvasOutput.height );    
     if( canvasWidth ) video.width = canvasWidth;
-    if( canvasHeight ) video.height = canvasHeight;
+    //if( canvasHeight ) video.height = canvasHeight;
 
   }
   
@@ -159,7 +161,7 @@
 
     // first line contains headers and meta data
     csvData.push({[timeStr]: "", [posXStr]: "", [posYStr]: "", [velXStr]: "", [velYStr]: "",
-                  [fpsStr]: toCSV(FPS), [origXStr]: toCSV(origin.x), [origYStr]: toCSV(origin.y), 
+                  [fpsStr]: toCSV(FPS), [origXStr]: toCSV(originX), [origYStr]: toCSV(originY), 
                   [scaleStr]: toCSV(pixelsPerMeter)}  );
 
     // Fill list with velocities and times
@@ -267,8 +269,8 @@
             // check not empty
             if( isNumeric(item[timeStr]) && isNumeric(item[posXStr]) && isNumeric(item[posYStr]) ) {
               let time = Math.floor( toNumber(item[timeStr])*FPS );
-              let xPos = origin.x + toNumber(item[posXStr])*pixelsPerMeter;
-              let yPos = origin.y - toNumber(item[posYStr])*pixelsPerMeter;
+              let xPos = originX + toNumber(item[posXStr])*pixelsPerMeter;
+              let yPos = originY - toNumber(item[posYStr])*pixelsPerMeter;
               let rawDataPoint = {t: time, x: xPos, y: yPos };  
 
               console.log(rawDataPoint );
@@ -281,28 +283,13 @@
           updateVelocityPlot();
         } else {
           // Remove status message
-          statusMsg.innerHTML = "Error loading csv file: header information not complete";
+          //statusMsg.innerHTML = "Error loading csv file: header information not complete";
+          alert("Error loading csv file: header information not complete");
         }
       }
     });
     
   });
-
-
-  function printStats(msg)
-{
-	if (msg)
-		console.log(msg);
-	console.log("       Time:", (end-start || "(Unknown; your browser does not support the Performance API)"), "ms");
-	console.log("  Row count:", rowCount);
-	if (stepped)
-		console.log("    Stepped:", stepped);
-	console.log("     Errors:", errorCount);
-	if (errorCount)
-		console.log("First error:", firstError);
-}
-
-
   
 
   // Create an invisible download element
@@ -316,24 +303,43 @@
     document.body.removeChild(element);
   }
 
-  
+  $("#videoImport").click( () => {
+    if( dataCanBeRemoved() ) {      
+      // Progagate to hidden DOM element
+      $("#videoInput").click();
+    }
+  });
   
   // Add event listener for when file is selected
-  videoInput.addEventListener('change', function() {
+  $("#videoInput").change( function() {
+
+    // Remove old source
+    video.removeAttribute('src'); // empty source
+    video.load();
+
+    // Clear raw data and meta data
+    rawData = [];
+    fpsInput.value = "";
+    scaleInput.value = "";
+    originXInput.value = "";
+    originYInput.value = "";
+    FPS = undefined;
+    pixelsPerMeter = undefined;
+    originX = undefined;
+    originY = undefined;
+
     // Disable video control and reset video parameters when selecting new video
-    frameCounter.innerHTML = 0;
-    frameNumber = 0;
-    FPS = 0;
     disableAnalysis();
     disableVideoControl();
-
+    
     // Get the file
     let URL = window.URL || window.webkitURL;
     let file = this.files[0];
+    console.log("video src=" + video.src);
     video.src = URL.createObjectURL(file);
+    console.log("video src=" + video.src);
     videoName = file.name;
-    
-  }, false);
+  });
   
   // video playback failed - show a message saying why
   video.addEventListener('error', (e) => {
@@ -354,7 +360,11 @@
         alert('An unknown error occurred.');
         break;
     }
+    disableAnalysis();
     disableVideoControl();
+    // Remove old source
+    video.removeAttribute('src'); // empty source
+    video.load();
   });
   
 
@@ -379,8 +389,15 @@
     console.log("Duration: " + video.duration );
 
     // Enable manually setting frame rate
-    fpsInput.removeAttribute("disabled");
+    //fpsInput.removeAttribute("disabled");
     
+    originButton.removeAttribute('disabled');
+    scaleButton.removeAttribute('disabled');
+    
+    // Highlight fields that need to be filled
+    scaleInput.style.background = 'pink';
+    fpsInput.style.background = 'pink';
+
     // Get the frame rate
     getFPS();
 
@@ -396,83 +413,91 @@
 
   function dataCanBeRemoved() {
     return (rawData.length == 0 || 
-           confirm("This will clear your current data (positions and velocities). Are you sure?") );
+           confirm("This will clear your current data. Are you sure?") );
   }
   
   // Update the frame rate (fps) when user gives input or when calculated
   fpsInput.onchange = function() {
 
-    if( this.value > 0 && dataCanBeRemoved() ) {
-      FPS = parseFloat(this.value);
-      slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
-    
-      // Always reset to first frame
-      gotoFrame( 0 );
-      
+    if( isNumeric(this.value) && toNumber(this.value) > 0 && dataCanBeRemoved() ) {
+
       // Clear data
       rawData = [];
-      
+
+      // Remove status message
+      statusMsg.innerHTML = "";   
+      this.style.background = ""; // remove pink alert
+
+      // Set the new FPS
+      FPS = toNumber(this.value);
+
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
       
-      // Video can be enabled
-      enableVideoControl();
-      
-      // Remove status message
-      statusMsg.innerHTML = "";
-      
-      this.style.background = '';
+      if( video.src !== "" ) {
+        // Update the slider
+        slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
+    
+        // Always reset to first frame
+        gotoFrame( 0 );
+        
+        // Video can be enabled
+        tryToEnable();
+      }
     } else {
-      this.value = FPS;
+      this.value = FPS || "";
     }
   }
 
   // Update the origin when user gives input or when calculated
   originXInput.onchange = function(evt) {
-    if( this.value ) {
-      origin.x = parseFloat( this.value ) ;
+    
+    if( isNumeric(this.value) ) {
+      originX = toNumber( this.value ) ;
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
     } else {
-      this.value = origin.x;
+      this.value = (typeof originX !== "undefined" ) ? originX : "";
     }
   }
   originYInput.onchange = function() {
-    if( this.value ) {
-      origin.y = parseFloat( this.value );
+    if( isNumeric(this.value) ) {
+      originY = toNumber( this.value ) ;
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
     } else {
-      this.value = origin.y;
+      this.value = (typeof originY !== "undefined" ) ? originY : "";
     }
   }
   
   // Update the origin when user gives input or when calculated
   scaleInput.onchange = function() {
-    if( this.value && this.value > 0 ) {
-      pixelsPerMeter = parseFloat( this.value );
+    
+    if( isNumeric(this.value) && toNumber(this.value) > 0 ) {
+      pixelsPerMeter = toNumber( this.value );   
       this.style.background = '';
       // Enable video analysis
-      enableAnalysis();
-      
+      tryToEnable() ;      
       // Update plots
       updatePositionPlot();
       updateVelocityPlot();
     } else {
-      this.value = pixelsPerMeter;
+      this.value = pixelsPerMeter || "";
+    }
+  }
+  
+  function tryToEnable() {
+    if( video.src !== "" ) {
+      if( fpsInput.value !== "" ) enableVideoControl();
+      if( fpsInput.value !== "" && scaleInput.value !== "" ) enableAnalysis();
     }
   }
   
   // Enable the video control buttons
   function enableVideoControl() {
-    originButton.removeAttribute('disabled');
-    originXInput.removeAttribute('disabled');
-    originYInput.removeAttribute('disabled');
-    scaleButton.removeAttribute('disabled');
-    scaleInput.removeAttribute('disabled');
     prevButton.removeAttribute('disabled');
     playButton.removeAttribute('disabled');
     nextButton.removeAttribute('disabled');
@@ -480,18 +505,16 @@
     zoomIn.removeAttribute('disabled');
     zoomOut.removeAttribute('disabled');
     
-    scaleInput.style.background = 'pink';
+    //scaleInput.style.background = 'pink';
   }
 
   // Disable the video control buttons
   function disableVideoControl() {
+    frameCounter.innerHTML = "0 / 0";
+
     showMediaInfo.setAttribute('disabled', '');
-    fpsInput.setAttribute('disabled', '');
     originButton.setAttribute('disabled', '');
-    originXInput.setAttribute('disabled', '');
-    originYInput.setAttribute('disabled', '');
     scaleButton.setAttribute('disabled', '');
-    scaleInput.setAttribute('disabled', '');
     prevButton.setAttribute('disabled', '');
     playButton.setAttribute('disabled', '');
     nextButton.setAttribute('disabled', '');
@@ -499,7 +522,7 @@
     zoomIn.setAttribute('disabled', '');  
     zoomOut.setAttribute('disabled', '');  
 
-    fpsInput.style.background = 'pink';
+    //fpsInput.style.background = 'pink';
   }
 
   function enableAnalysis() {
@@ -519,7 +542,7 @@
 
   // load all code after the document
   $("document").ready( () => {
-    videoInput.removeAttribute('disabled');    
+    videoImport.removeAttribute('disabled');    
   });
                       
   // Event listener for the modal boxes
@@ -584,9 +607,9 @@
               resolve(new Uint8Array(event.target.result));
             }
             reader.readAsArrayBuffer(file.slice(offset, offset + chunkSize));
-          })
+          });
 
-        mediainfo.analyzeData(getSize, readChunk).then((result) => {
+          mediainfo.analyzeData(getSize, readChunk).then((result) => {
             //mediaInfoResult.value = JSON.stringify(result, undefined, 4);
             mediaInfoResult.innerHTML = JSON.stringify(result, undefined, 4);
 
@@ -597,11 +620,13 @@
                 fpsInput.value = track.FrameRate;
                 fpsInput.onchange();
                 showMediaInfo.removeAttribute("disabled");
+                statusMsg.innerHTML = "";
               }
             } );
         })
           .catch((error) => {  
-            statusMsg.innerHTML = `An error occured:\n${error.stack}`
+            alert("An error occured. Please set FPS manually.");
+            statusMsg.innerHTML = "";
         })
       }
     })
@@ -868,8 +893,8 @@
 
   function getXYposition(posPx) {
     return {
-      x: (posPx.x-origin.x)/pixelsPerMeter,       
-      y: (origin.y-posPx.y)/pixelsPerMeter 
+      x: (posPx.x-originX)/pixelsPerMeter,       
+      y: (originY-posPx.y)/pixelsPerMeter 
     };
   }
 
