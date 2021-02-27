@@ -15,6 +15,7 @@ body * {
   background: #ccc;
   padding: 0px 0px;
   /*font-weight: bold;*/
+  display: flex;
 }
 
 .body {
@@ -40,7 +41,7 @@ body * {
   margin: 0px 0px;
   padding: 5px;
   background: #bbb;
-  color: #fff;
+  /*color: #fff;*/
   font-size: 2.0em;
   font-weight: bold;
 }
@@ -75,7 +76,7 @@ body * {
 
 @media screen and (max-width: 900px) { 
   .body {flex-direction: column;} 
-  .main {width: 100vw;}
+  .main {width: 100vw; min-height: 70vh}
 }
 
 .center {
@@ -99,10 +100,12 @@ body * {
 
 /* Links inside the navbar */
 .header .titlebar {
+  flex: 1;
   float: left;
-  font-size: 30px;
+  font-size: 24px;
   font-weight: bold;
-  padding: 7px 7px;
+  padding: 11px 10px;
+  /*background-color: blue;*/
 }
 
 /* Links inside the navbar */
@@ -124,11 +127,11 @@ body * {
 
 /* Dropdown button */
 .dropdown .dropbtn {
-  font-size: 30px;
+  font-size: 24px;
   color: inherit;
   border: none;
   outline: none;
-  padding: 7px 20px;
+  padding: 11px 20px;
   background-color: inherit;
   font-family: inherit; /* Important for vertical align on mobile phones */
   margin: 0; /* Important for vertical align on mobile phones */
