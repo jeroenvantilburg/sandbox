@@ -1,6 +1,6 @@
 html, body {
   height: 100%;
-  /*overflow: hidden;*/
+  overflow: hidden;
   font:100% Verdana,Tahoma,Arial,sans-serif;
   margin: 0;
 }
@@ -76,7 +76,7 @@ body * {
 
 @media screen and (max-width: 900px) { 
   .body {flex-direction: column;} 
-  .main {width: 100vw; min-height: 70vh}
+  .main {width: 100vw; min-height: 60vh}
 }
 
 .center {
