@@ -33,7 +33,7 @@ body * {
   padding: 0px 5px;
   padding: 0px 0px;
   background: #fbfbfb;
-  flex: 0 0 360px;
+  flex: 0 0 360px 1000px;
   overflow: auto;
 }
 
