@@ -52,7 +52,22 @@ body * {
   /*overflow: auto;*/
 }
 
+.main-button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 5px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  border-radius: 4px;
+}
 
+.main-button:disabled {
+  background: #c3d6be;
+  color: #eee;
+}
 
 .main {
   flex: 1;
@@ -105,7 +120,7 @@ body * {
   float: left;
   font-size: 24px;
   font-weight: bold;
-  padding: 11px 10px;
+  padding: 10px 10px;
   /*background-color: blue;*/
 }
 
@@ -132,7 +147,7 @@ body * {
   color: inherit;
   border: none;
   outline: none;
-  padding: 11px 20px;
+  padding: 10px 20px;
   background-color: inherit;
   font-family: inherit; /* Important for vertical align on mobile phones */
   margin: 0; /* Important for vertical align on mobile phones */

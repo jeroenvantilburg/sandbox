@@ -32,6 +32,10 @@
   let startAndStopAuto = document.getElementById('startAndStopAuto');
   let startAndStopManual = document.getElementById('startAndStopManual');
   
+  let startText = startAndStopManual.innerText;
+  let stopText = "Stop analysis";
+
+
   // Global video parameters
   let playing = false;
   let streaming = false;
@@ -527,6 +531,8 @@
 
   function enableAnalysis() {
     startAndStopManual.removeAttribute('disabled');
+    startAndStopManual.innerText = startText;
+    startAndStopManual.style.backgroundColor = "#4CAF50";
 
     // Automatic analysis only when openCV is ready
     //document.getElementById('opencv').onload= () => onOpenCvReady();
@@ -535,9 +541,13 @@
     //}
   }
 
-  function disableAnalysis() {
+  function disableAnalysis() {    
+    startAndStopManual.innerText = startText;
+    startAndStopManual.style.backgroundColor = "#c3d6be";
+    canvasClick = "";
     startAndStopManual.setAttribute('disabled', '');
     startAndStopAuto.setAttribute('disabled', '');
+
   }
 
   // load all code after the document
@@ -704,7 +714,8 @@
   // Set origin button
   originButton.addEventListener('click', evt => {
     if( canvasClick === "addRawDataPoint") {
-      startAndStopManual.innerText = 'Manual';
+      startAndStopManual.innerText = startText;
+      startAndStopManual.style.backgroundColor = "#4CAF50";
     }
     canvasClick = "setOrigin";
     // set statusMsg
@@ -730,7 +741,8 @@
   // Set scale button
   scaleButton.addEventListener('click', evt => {
     if( canvasClick === "addRawDataPoint") {
-      startAndStopManual.innerText = 'Manual';
+      startAndStopManual.innerText = startText;
+      startAndStopManual.style.backgroundColor = "#4CAF50";
     } 
     canvasClick = "setScale1";
     // set statusMsg
@@ -770,15 +782,17 @@
     statusMsg.innerHTML = "";
     
   }
-
+  
   // Manual analysis
   startAndStopManual.addEventListener('click', evt => {
 
-    if( startAndStopManual.innerText === 'Manual' ) {
-      startAndStopManual.innerText = 'Stop';
+    if( startAndStopManual.innerText === startText ) {
+      startAndStopManual.innerText = stopText;
+      startAndStopManual.style.backgroundColor = "darkred";
       canvasClick = "addRawDataPoint";
     } else {
-      startAndStopManual.innerText = 'Manual';
+      startAndStopManual.innerText = startText;
+      startAndStopManual.style.backgroundColor = "#4CAF50";
       canvasClick = "";
     }
   });
