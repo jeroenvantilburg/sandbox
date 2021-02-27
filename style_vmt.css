@@ -42,14 +42,14 @@ body * {
   padding: 5px;
   background: #bbb;
   /*color: #fff;*/
-  font-size: 2.0em;
+  font-size: 18px;
   font-weight: bold;
 }
 
 .side-main {
   padding: 5px 5px;
   background: #fbfbfb;
-  overflow: auto;
+  /*overflow: auto;*/
 }
 
 
@@ -76,7 +76,8 @@ body * {
 
 @media screen and (max-width: 900px) { 
   .body {flex-direction: column;} 
-  .main {width: 100vw; min-height: 60vh}
+  .main {width: 100vw; min-height: 60vh;}
+  .sidebar {height: 100%;}
 }
 
 .center {
