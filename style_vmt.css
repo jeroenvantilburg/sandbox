@@ -52,6 +52,40 @@ body * {
   /*overflow: auto;*/
 }
 
+.main {
+  flex: 1;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  padding: 5px 5px;
+  background: #ddd;
+  /*color: #fff;*/
+  font-size: 1.0em;
+}
+
+.content {
+  padding: 5px;
+  flex: 1 1;
+  overflow: auto;
+}
+
+@media screen and (max-width: 900px) { 
+  .body {flex-direction: column;} 
+  .main {width: 100vw; min-height: 60vh;}
+  .sidebar {height: 100%;}
+}
+
+
+
+.center {
+  text-align: center;
+}
+
+
+
 .main-button {
   background-color: #4CAF50;
   border: none;
@@ -69,34 +103,12 @@ body * {
   color: #eee;
 }
 
-.main {
-  flex: 1;
-  width: 300px;
-  display: flex;
-  flex-direction: column;
+.button-on {
+  background-color: #4CAF50;
 }
 
-.page-header {
-  padding: 5px 5px;
-  background: #ddd;
-  color: #fff;
-  font-size: 1.0em;
-}
-
-.content {
-  padding: 5px;
-  flex: 1 1;
-  overflow: auto;
-}
-
-@media screen and (max-width: 900px) { 
-  .body {flex-direction: column;} 
-  .main {width: 100vw; min-height: 60vh;}
-  .sidebar {height: 100%;}
-}
-
-.center {
-  text-align: center;
+.button-off {
+  background-color: rgb(182, 0, 0);
 }
 
 
@@ -116,6 +128,8 @@ body * {
 
 /* Links inside the navbar */
 .header .titlebar {
+  white-space: nowrap; 
+  overflow: hidden;
   flex: 1;
   float: left;
   font-size: 24px;

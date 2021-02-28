@@ -532,7 +532,9 @@
   function enableAnalysis() {
     startAndStopManual.removeAttribute('disabled');
     startAndStopManual.innerText = startText;
-    startAndStopManual.style.backgroundColor = "#4CAF50";
+    //startAndStopManual.style.backgroundColor = "#4CAF50";
+    startAndStopManual.classList.add("button-on");
+    startAndStopManual.classList.remove("button-off");
 
     // Automatic analysis only when openCV is ready
     //document.getElementById('opencv').onload= () => onOpenCvReady();
@@ -543,7 +545,7 @@
 
   function disableAnalysis() {    
     startAndStopManual.innerText = startText;
-    startAndStopManual.style.backgroundColor = "#c3d6be";
+    //startAndStopManual.style.backgroundColor = "#c3d6be";
     canvasClick = "";
     startAndStopManual.setAttribute('disabled', '');
     startAndStopAuto.setAttribute('disabled', '');
@@ -715,7 +717,9 @@
   originButton.addEventListener('click', evt => {
     if( canvasClick === "addRawDataPoint") {
       startAndStopManual.innerText = startText;
-      startAndStopManual.style.backgroundColor = "#4CAF50";
+      //startAndStopManual.style.backgroundColor = "#4CAF50";
+      startAndStopManual.classList.remove("button-off");
+      startAndStopManual.classList.add("button-on");
     }
     canvasClick = "setOrigin";
     // set statusMsg
@@ -742,7 +746,9 @@
   scaleButton.addEventListener('click', evt => {
     if( canvasClick === "addRawDataPoint") {
       startAndStopManual.innerText = startText;
-      startAndStopManual.style.backgroundColor = "#4CAF50";
+      //startAndStopManual.style.backgroundColor = "#4CAF50";
+      startAndStopManual.classList.add("button-on");
+      startAndStopManual.classList.remove("button-off");
     } 
     canvasClick = "setScale1";
     // set statusMsg
@@ -788,13 +794,16 @@
 
     if( startAndStopManual.innerText === startText ) {
       startAndStopManual.innerText = stopText;
-      startAndStopManual.style.backgroundColor = "darkred";
+      //startAndStopManual.style.backgroundColor = "darkred";
       canvasClick = "addRawDataPoint";
     } else {
       startAndStopManual.innerText = startText;
-      startAndStopManual.style.backgroundColor = "#4CAF50";
+      //startAndStopManual.style.backgroundColor = "#4CAF50";
       canvasClick = "";
     }
+    startAndStopManual.classList.toggle('button-on');
+    startAndStopManual.classList.toggle('button-off');
+
   });
 
   function addRawDataPoint(evt) {
