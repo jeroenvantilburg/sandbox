@@ -9,12 +9,14 @@ body * {
   box-sizing: border-box;
 }
 
+body {
+  font-size: 0.75em;
+}
+
 .header {
-  /*font-size: 30px;*/
   height: 50px;
   background: #ccc;
   padding: 0px 0px;
-  /*font-weight: bold;*/
   display: flex;
 }
 
@@ -26,7 +28,6 @@ body * {
   bottom: 0;
   left: 0;
   display: flex;
-  font-size: 0.7em;
 }
 
 .sidebar {
@@ -41,7 +42,6 @@ body * {
   margin: 0px 0px;
   padding: 5px;
   background: #bbb;
-  /*color: #fff;*/
   font-size: 18px;
   font-weight: bold;
 }
@@ -62,8 +62,6 @@ body * {
 .page-header {
   padding: 5px 5px;
   background: #ddd;
-  /*color: #fff;*/
-  font-size: 1.0em;
 }
 
 .content {
@@ -326,4 +324,31 @@ input::-webkit-inner-spin-button {
   text-decoration: none;
   cursor: pointer;
 }
+
+#mediaInfoResult>table {
+  border-collapse: collapse;
+}
+
+#mediaInfoResult>table th {
+  font-weight: bold;
+  font-size: 1.5em;
+  text-align: left;
+  padding-top: 18px;
+  padding-bottom: 2px;
+}
+
+#mediaInfoResult>table .table-header {
+  background-color: rgba(0,0,0,0) !important;
+}
+
+#mediaInfoResult>table td {
+  border: 1px solid #ddd;
+}
+
+#mediaInfoResult>table tr:nth-child(odd) {
+  background-color: rgba(0,0,0,0.1);
+}
+
+
+
 

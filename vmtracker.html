@@ -8,6 +8,7 @@
   <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <!--link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"-->
+  <base target="_blank">
 </head>  
 <body>
   <div class="header">
@@ -224,8 +225,10 @@
   <div id="mediaInfoModal" class="modal">
     <div class="modal-content"> <span class="close">&times;</span>
       <h2>Video File Info</h2>
-      <!--textarea id="mediaInfoResult"></textarea-->
-      <pre id="mediaInfoResult"></pre>
+      The following information is obtained from the 
+      <a href="https://mediainfo.js.org/">mediainfo.js</a> library. 
+      We only need the FrameRate number.
+      <div id="mediaInfoResult"></div>
     </div>
   </div>
 

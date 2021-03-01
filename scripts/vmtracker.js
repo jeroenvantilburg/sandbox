@@ -623,7 +623,10 @@
 
           mediainfo.analyzeData(getSize, readChunk).then((result) => {
             //mediaInfoResult.value = JSON.stringify(result, undefined, 4);
-            mediaInfoResult.innerHTML = JSON.stringify(result, undefined, 4);
+            //mediaInfoResult.innerHTML = JSON.stringify(result, undefined, 4);
+            
+            // 
+            mediaInfoResult.innerHTML += convertToTable(result.media.track);
 
             console.log(result);
             result.media.track.forEach(track => {
@@ -643,6 +646,28 @@
       }
     })
   }
+  
+  function convertToTable(tracks) {
+    let output = "\n <table>";
+    tracks.forEach(track => {
+      //if( track["@type"] === "Video") {
+      //output += "<tr>";
+      for (const [key, value] of Object.entries(track)) {
+        if( key === "@type" ) {
+          output += `<tr class="table-header"><th colspan=2>${value}</th></tr>\n`;
+        } else {
+          //console.log(`${key}: ${value}`);
+          output += `<tr><td>${key}</td><td>${value}</td></tr>\n`;
+          //output += "\n";
+        }
+      }
+      //output += "</tr>";
+    } );
+    output += "</table>";
+    
+    return output;
+  }
+  
   
   prevButton.addEventListener('click', evt => {
     // Go to next frame
