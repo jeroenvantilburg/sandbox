@@ -51,6 +51,7 @@
   let decimalSeparator = getDecimalSeparator();
   let integrationTime = 2;
   let delimiter = ",";
+  let avoidEmptyCells = false;
 
   let scale1, scale2;
   let pixelsPerMeter;
@@ -66,14 +67,31 @@
     this.value = integrationTime || "";
   });
 
+  
   $("#decimalSeparatorInput").val( decimalSeparator );
-  $("#decimalSeparatorInput").on("keydown",blurOnEnter);
-  $("#decimalSeparatorInput").change( function() { decimalSeparator = this.value ; });
+  $("decimalSep").html( decimalSeparator );
+  $("#decimalSeparatorInput").change( function() { 
+    decimalSeparator = this.value ;
+    $("decimalSep").html( decimalSeparator );
+  });
 
+  /*$('input[name=decimalSeparatorInput][value="' + decimalSeparator +'"]').prop('checked',true);
+  $('input[name=decimalSeparatorInput]').on('change', function(e) {
+    decimalSeparator = document.querySelector('input[name="decimalSeparatorInput"]:checked').value;
+  });*/
+  
+  
   $("#delimiterInput").val( delimiter );
-  $("#delimiterInput").on("keydown",blurOnEnter);
-  $("#delimiterInput").change( function() { delimiter = this.value ; });
+  $("delimiter").html( delimiter );
+  //$("#delimiterInput").on("keydown",blurOnEnter);
+  $("#delimiterInput").change( function() { 
+    delimiter = this.value ; 
+    $("delimiter").html( delimiter === "tab" ? "&nbsp;&nbsp;&nbsp;&nbsp;" : delimiter );  
+  });
 
+  $('#avoidEmptyCells').on('change', function(e) {
+    avoidEmptyCells = $('#avoidEmptyCells').is(':checked');
+  });
   
   zoomOut.addEventListener('click', () => {
     if( canvasOutput.width > 200 ) { // minimum 200 px should be small enough
@@ -178,6 +196,9 @@
       }
     });
     
+    // Frame tolerance decides when velocities are grouped with position entries in one row
+    let frameTolerance = avoidEmptyCells ? 0.51 : 0.01;
+    
     // Fill csvData with sequential times
     let vIndex = 0;
     rawData.forEach(function (item, index) {
@@ -187,7 +208,7 @@
 
       // add all velocities before this item
       while( vIndex < velocities.length && 
-            velocities[vIndex].frame < thisFrame-0.01 ) {
+            velocities[vIndex].frame < thisFrame - frameTolerance ) {
         // add only the velocity
         csvData.push({[timeStr]: toCSV( velocities[vIndex].t ), 
                       [velXStr]: toCSV( velocities[vIndex].x ), 
@@ -195,7 +216,7 @@
         ++vIndex;
       }
       // check if velocity has same frame number
-      if( vIndex < velocities.length && velocities[vIndex].frame - thisFrame < 0.01 ) { 
+      if( vIndex < velocities.length && velocities[vIndex].frame - thisFrame < frameTolerance ) { 
         // combine items
         csvData.push({[timeStr]: toCSV(time), 
                       [posXStr]: toCSV(pos.x), 

@@ -183,6 +183,10 @@
         
       <b>Instructions</b><br/>
       ...
+            The velocity is calculated from two positions. The corresponding time is the average of these points. 
+      The velocity fields have their own time stamps, which may not overlap with the time stamps from the positions. This may cause empty cells in the CSV file.
+
+
 
     </div>
   </div>
@@ -190,31 +194,43 @@
   <div id="settingsModal" class="modal">
     <div class="modal-content"> <span class="close">&times;</span>
       <h2>Settings</h2>
-      <b>General</b><br/>
-      ....
-      <br/><br/>
         
-      <b>Velocity calculation</b><br/>
-      Integration time:
-      <input id="integrationTimeInput" type="number" min="1" step="1" max="10" style="width:60px">
+    <table>
+      <tr><th colspan="3">Velocity calculation</th></tr>
+      <tr><td>Integration time:</td><td>
+      <input id="integrationTimeInput" type="number" min="1" step="1" max="10">
       </input>
-    <br/>
-      ....
-      <br/><br/>
+      </td><td>Number of frames used to calculate velocity. A larger integration time results in a smoother velocity graph, but a decreased sensitivity to changes in the velocity.</td></tr>
+      </tr>
+    </table>
 
-      <b>CSV settings</b><br/>
-      <label for="decimalSep">Decimal separator: </label>
+    <br/>
+
+
+
+    <table>
+      <tr><th colspan="3">Exporting CSV files</th></tr>
+      <tr><td>Decimal separator:</td><td>
     <select id="decimalSeparatorInput" name="decimalSep">
       <option value=".">.</option>
       <option value=",">,</option>
-    </select><br/>
-      <label for="delimiter">Delimiter: </label>
+      </select></td><td>Numbers are written as 1<decimalSep></decimalSep>23</td></tr><tr><td>
+    <!--Decimal separator:<br/>
+    <label><input type="radio" name="decimalSeparatorInput" value=".">.</label><br/>   
+    <label><input type="radio" name="decimalSeparatorInput" value=",">,</label>   
+<br/-->
+      Delimiter:</td><td>
     <select id="delimiterInput" name="delimiter">
       <option value=",">,</option>
       <option value="tab">tab</option>
       <option value=";">;</option>
       <option value=" ">space</option>
-    </select>
+      </select></td><td>Fields are separated as <pre>"Field1"<delimiter></delimiter>"Field2"</pre></td></tr>
+
+    <tr><td>Avoid empty cells:</td><td>
+    <input type="checkbox" id="avoidEmptyCells"></td>
+      <td>Adjust the velocity time stamps by at most half a frame. This avoids empty cells, but slightly reduces the accuracy of the velocity time stamp.</td></tr>
+</table>
 
     
     </div>
