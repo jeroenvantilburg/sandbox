@@ -73,8 +73,9 @@
   $("#framesToSkip").change( function() {
     if( isNumeric(this.value) ) {
       framesToSkip = Math.round( toNumber(this.value) );
+    } else {
+      this.value = framesToSkip || "";      
     }
-    this.value = framesToSkip || "";
   });
   
   $("#integrationTimeInput").val( integrationTime );
@@ -152,6 +153,9 @@
   });
 
   function drawVideo(canvasWidth, canvasHeight) {
+    // TODO: use canvas.setDimensions({ width: canvas.getWidth() * scaleRatio, height: canvas.getHeight() * scaleRatio })
+    
+    
     let scaleRatio = canvasWidth / width;
     if( canvasWidth ) {
       //canvasOutput.width = canvasWidth;
@@ -460,6 +464,7 @@
     pixelsPerMeter = undefined;
     originX = undefined;
     originY = undefined;
+    canvas.clear();
 
     // Disable video control and reset video parameters when selecting new video
     disableAnalysis();
@@ -965,10 +970,10 @@
 
     console.log(posPx);
 
-    let circle = new fabric.Circle({ left: posPx.x, top: posPx.y, radius: 3, 
+    /*let circle = new fabric.Circle({ left: posPx.x, top: posPx.y, radius: 3, 
                                     stroke: 'red', strokeWidth: 1, fill: 'rgba(0,0,0,0)' });
     canvas.add( circle );
-               
+    */           
     // Add raw data
     let rawDataPoint = {t: frameNumber, x: posPx.x, y: posPx.y};
     addRawData( rawDataPoint );
@@ -1085,9 +1090,18 @@
       video.addEventListener("seeked", function(e) {
         e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
         //canvasContext.drawImage(video,0,0, width, height );
-        drawVideo();
+        //drawVideo();
         frameCounter.innerHTML = frameNumber + " / " +slider.max;
         slider.value = frameNumber;
+        
+        canvas.clear();
+        let point = rawData.find( function(item) { return item.t === targetFrame; });
+        if( point ) {
+          let circle = new fabric.Circle({ left: point.x, top: point.y, radius: 3, 
+                                           stroke: 'red', strokeWidth: 1, fill: 'rgba(0,0,0,0)' });
+          canvas.add( circle );
+        }
+        
       });
       return true;
     }
