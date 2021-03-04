@@ -35,6 +35,14 @@
   let startText = startAndStopManual.innerText;
   let stopText = "Stop analysis";
 
+  var canvas = this.__canvas = new fabric.StaticCanvas('canvasOutput');
+  fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
+  
+  /*canvas.add(
+    new fabric.Rect({ top: 100, left: 100, width: 50, height: 50, fill: '#f55' }),
+    new fabric.Circle({ top: 140, left: 230, radius: 75, fill: 'green' }),
+    new fabric.Triangle({ top: 300, left: 210, width: 100, height: 100, fill: 'blue' })
+  );*/
 
   // Global video parameters
   let playing = false;
@@ -116,23 +124,47 @@
   $('#avoidEmptyCells').on('change', function(e) {
     avoidEmptyCells = $('#avoidEmptyCells').is(':checked');
   });
-  
+    
   zoomOut.addEventListener('click', () => {
+    /*console.log("zoom: " + canvasOutput.width / width );
     if( canvasOutput.width > 200 ) { // minimum 200 px should be small enough
       drawVideo(0.5*canvasOutput.width, 0.5*canvasOutput.height);
+    }*/
+    console.log("zoom: " + canvas.width / width );
+    if( canvas.width > 200 ) { // minimum 200 px should be small enough
+      drawVideo(0.5*canvas.width, 0.5*canvas.height);
     }
+
   });
 
   zoomIn.addEventListener('click', () => {
-    //console.log("zoom: " + canvasOutput.width / width );
+    /*console.log("zoom: " + canvasOutput.width / width );
     if( canvasOutput.width < 8 * width ) { // Maximum zoom x8
       drawVideo(2*canvasOutput.width, 2*canvasOutput.height)
+    }*/
+    console.log("zoom: " + canvas.width / width );
+    if( canvas.width < 8 * width ) { // Maximum zoom x8
+      drawVideo(2*canvas.width, 2*canvas.height)
     }
+
+
+    
   });
 
   function drawVideo(canvasWidth, canvasHeight) {
-    if( canvasWidth ) canvasOutput.width = canvasWidth;
-    if( canvasHeight ) canvasOutput.height = canvasHeight;
+    let scaleRatio = canvasWidth / width;
+    if( canvasWidth ) {
+      //canvasOutput.width = canvasWidth;
+      canvas.setWidth(canvasWidth);
+      console.log("scaleRatio = "+ scaleRatio);
+      canvas.setZoom(scaleRatio);
+    }
+    if( canvasHeight ) {
+      //canvasOutput.height = canvasHeight;
+      canvas.setHeight(canvasHeight);
+    }
+    canvas.renderAll();
+
     //canvasContext.drawImage(video,0,0, canvasOutput.width, canvasOutput.height );    
     if( canvasWidth ) video.width = canvasWidth;
     //if( canvasHeight ) video.height = canvasHeight;
@@ -820,6 +852,7 @@
 
   let canvasClick = "";
   canvasOutput.addEventListener('click', (evt) => {
+    console.log("canvas is clicked="+canvasClick);
     if( canvasClick === "addRawDataPoint" ) {
       addRawDataPoint(evt);
     } else if( canvasClick === "setOrigin" ) {
@@ -927,7 +960,15 @@
   function addRawDataPoint(evt) {
     // Get mouse position in pixels
     let posPx = getMousePos(canvasOutput, evt);
-    
+
+    //console.log(evt);
+
+    console.log(posPx);
+
+    let circle = new fabric.Circle({ left: posPx.x, top: posPx.y, radius: 3, 
+                                    stroke: 'red', strokeWidth: 1, fill: 'rgba(0,0,0,0)' });
+    canvas.add( circle );
+               
     // Add raw data
     let rawDataPoint = {t: frameNumber, x: posPx.x, y: posPx.y};
     addRawData( rawDataPoint );
@@ -1052,17 +1093,33 @@
     }
   }
 
-  function getMousePos(canvas, evt) {
-    let rect = canvas.getBoundingClientRect();
-    let scaleX = canvas.width / width;    // relationship bitmap vs. element for X
-    let scaleY = canvas.height / height;  // relationship bitmap vs. element for Y
+  function getMousePos(thisCanvas, evt) {
+
+    /*let rect = thisCanvas.getBoundingClientRect();
+    let scaleX = thisCanvas.width / width;    // relationship bitmap vs. element for X
+    let scaleY = thisCanvas.height / height;  // relationship bitmap vs. element for Y
 
     //console.log("scaleX= "+ scaleX+ " scale="+canvas.width/width );
     
     return {
       x: (evt.clientX - rect.left)/scaleX,
       y: (evt.clientY - rect.top)/scaleY
+    };*/
+    
+    //console.log(canvas);
+    
+    let rect = canvas.lowerCanvasEl.getBoundingClientRect();
+    let scaleX = canvas.width / width;    // relationship bitmap vs. element for X
+    let scaleY = canvas.height / height;  // relationship bitmap vs. element for Y
+
+    console.log("scaleX= "+ scaleX+ " scale="+canvas.width/width );
+    
+    return {
+      x: (evt.clientX - rect.left)/scaleX,
+      y: (evt.clientY - rect.top)/scaleY
     };
+
+    
   }
 
   function getXYposition(posPx) {
