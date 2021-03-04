@@ -48,6 +48,8 @@
   let videoName = "";
 
   // Settings. TODO let user modify it...
+  let showVelocity = ($('#velocityChart').css('display') != 'none' );
+  let showAcceleration = ($('#accelerationChart').css('display') != 'none' );
   let decimalSeparator = getDecimalSeparator();
   let integrationTime = 2;
   let delimiter = ",";
@@ -62,11 +64,23 @@
   $("#integrationTimeInput").change( function() {
     if( isNumeric(this.value) && toNumber(this.value) > 0.5) {
       integrationTime = Math.round( toNumber(this.value) );
-      updateVelocityPlot(); 
+      updatePlots(); 
     }
     this.value = integrationTime || "";
   });
 
+  $('#showVelocity').prop('checked',showVelocity);
+  $('#showVelocity').on('change', function(e) {
+    showVelocity = $('#showVelocity').is(':checked');
+    $('#velocityChart').toggle();
+  });
+  
+  $('#showAcceleration').prop('checked',showAcceleration);
+  $('#showAcceleration').on('change', function(e) {
+    showAcceleration = $('#showAcceleration').is(':checked');
+    $('#accelerationChart').toggle();
+  });
+  
   
   $("#decimalSeparatorInput").val( decimalSeparator );
   $("decimalSep").html( decimalSeparator );
@@ -143,7 +157,7 @@
 
   
   function toCSV(number, precision = 6) {
-    console.log(number);
+    //console.log(number);
     // Store numbers to 6 digits precision
     return number.toPrecision(precision).toString().replace('.',decimalSeparator);
   }
@@ -157,8 +171,7 @@
     if( dataCanBeRemoved () ) {
       rawData = [];
       // Update plots
-      updatePositionPlot();
-      updateVelocityPlot();
+      updatePlots();
     }
   });
 
@@ -168,6 +181,8 @@
   let posYStr  = "y position [m]";
   let velXStr  = "x velocity [m/s]";
   let velYStr  = "y velocity [m/s]";
+  let accXStr  = "x acceleration [m/s²]";
+  let accYStr  = "y acceleration [m/s²]";
   let fpsStr   = "Frame rate [Hz]";
   let origXStr = "x origin [px]";
   let origYStr = "y origin [px]";
@@ -182,9 +197,18 @@
     let csvData = [];
 
     // first line contains headers and meta data
-    csvData.push({[timeStr]: "", [posXStr]: "", [posYStr]: "", [velXStr]: "", [velYStr]: "",
+    csvData.push({[timeStr]: "", [posXStr]: "", [posYStr]: "", 
+                  [velXStr]: "", [velYStr]: "", [accXStr]: "", [accYStr]: "",
                   [fpsStr]: toCSV(FPS), [origXStr]: toCSV(originX), [origYStr]: toCSV(originY), 
                   [scaleStr]: toCSV(pixelsPerMeter)}  );
+    if( showVelocity == false ) {
+      delete csvData[0][velXStr];
+      delete csvData[0][velYStr];      
+    }
+    if( showAcceleration == false ) {
+      delete csvData[0][accXStr];
+      delete csvData[0][accYStr];      
+    }
 
     // Fill list with velocities and times
     let velocities = [];
@@ -195,6 +219,21 @@
         velocities.push({frame: frame, t: velocity.t, x: velocity.x, y: velocity.y});
       }
     });
+    
+    // Fill list with acceleration and times
+    let accelerations = [];
+    velocities.forEach(function (item, index) {
+      if( index > integrationTime-1 ) {
+        let prevItem = velocities[index - integrationTime];
+        let frame = 0.5*(item.frame + prevItem[index-integrationTime].frame);
+        let meanT = 0.5*(item.t + prevItem.t);
+        let dt = item.t - prevItem.t;
+        let accelX = (item.x - prevItem.x) / dt;
+        let accelY = (item.y - prevItem.y) / dt;
+        accelerations.push({frame: frame, t: meanT, x: accelX, y: accelY});
+      }
+    });
+
     
     // Frame tolerance decides when velocities are grouped with position entries in one row
     let frameTolerance = avoidEmptyCells ? 0.51 : 0.01;
@@ -218,6 +257,7 @@
       // check if velocity has same frame number
       if( vIndex < velocities.length && velocities[vIndex].frame - thisFrame < frameTolerance ) { 
         // combine items
+        // TODO: only add the velocity part
         csvData.push({[timeStr]: toCSV(time), 
                       [posXStr]: toCSV(pos.x), 
                       [posYStr]: toCSV(pos.y),
@@ -225,11 +265,29 @@
                       [velYStr]: toCSV(velocities[vIndex].y)}  );
         ++vIndex;
       } else { // add only the position
+        // TODO: do this first and save the item
         csvData.push({[timeStr]: toCSV(time), 
                       [posXStr]: toCSV(pos.x), 
                       [posYStr]: toCSV(pos.y)}  );        
       }
     });
+    
+    // TODO: first create temporary csvData above WITH frame number
+    // then loop over temporry csvData and add acceleration (like above)
+    // only difference: copy data from temporary csvData to final csvData
+    
+    
+    /*let csvIndex = 1;
+    velocities.forEach(function (item, index) {
+      // find first entry in csvData with same frame
+      while( cvsIndex < csvData.length && 
+             csvData[cvsIndex].frame < thisFrame - frameTolerance ) {
+        // insert data in csvData??? --> not a good idea!
+        
+      }
+      
+    });*/
+    
 
     var csv = Papa.unparse( csvData, {quotes : true, 
                                       delimiter : delimiter === "tab" ? "\t" : delimiter } );
@@ -264,7 +322,7 @@
     Papa.parse(file, {
       header: true,
       complete: function(results) {
-        console.log(results.data);
+        //console.log(results.data);
         // TODO: fps disabled?
         
         // check header integrety
@@ -298,14 +356,13 @@
               let yPos = originY - toNumber(item[posYStr])*pixelsPerMeter;
               let rawDataPoint = {t: time, x: xPos, y: yPos };  
 
-              console.log(rawDataPoint );
+              //console.log(rawDataPoint );
               addRawData( rawDataPoint );
             }
           }
            
           // Update plots
-          updatePositionPlot();
-          updateVelocityPlot();
+          updatePlots();
         } else {
           // Remove status message
           //statusMsg.innerHTML = "Error loading csv file: header information not complete";
@@ -457,8 +514,7 @@
       FPS = toNumber(this.value);
 
       // Update plots
-      updatePositionPlot();
-      updateVelocityPlot();
+      updatePlots();
       
       if( video.src !== "" ) {
         // Update the slider
@@ -481,8 +537,7 @@
     if( isNumeric(this.value) ) {
       originX = toNumber( this.value ) ;
       // Update plots
-      updatePositionPlot();
-      updateVelocityPlot();
+      updatePlots();
     } else {
       this.value = (typeof originX !== "undefined" ) ? originX : "";
     }
@@ -491,8 +546,7 @@
     if( isNumeric(this.value) ) {
       originY = toNumber( this.value ) ;
       // Update plots
-      updatePositionPlot();
-      updateVelocityPlot();
+      updatePlots();
     } else {
       this.value = (typeof originY !== "undefined" ) ? originY : "";
     }
@@ -507,8 +561,7 @@
       // Enable video analysis
       tryToEnable() ;      
       // Update plots
-      updatePositionPlot();
-      updateVelocityPlot();
+      updatePlots();
     } else {
       this.value = pixelsPerMeter || "";
     }
@@ -649,7 +702,7 @@
             // 
             mediaInfoResult.innerHTML += convertToTable(result.media.track);
 
-            console.log(result);
+            //console.log(result);
             result.media.track.forEach(track => {
               if( track["@type"] === "Video") {                        
                 // Set the new FPS
@@ -861,8 +914,7 @@
     addRawData( rawDataPoint );
     
     // Update plots
-    updatePositionPlot();
-    updateVelocityPlot();
+    updatePlots();
     
     // Go to next frame
     gotoFrame(frameNumber+1);
@@ -880,7 +932,12 @@
     }
   }
 
-
+  function updatePlots() {
+    updatePositionPlot();
+    updateVelocityPlot();
+    updateAccelerationPlot();
+  }
+  
   function updatePositionPlot() { 
     let xPositions = [];
     let yPositions = [];
@@ -923,6 +980,35 @@
     return { t: meanT, x : velocityX, y : velocityY }; 
   }
 
+  function updateAccelerationPlot() { 
+    let xAcceleration = [];
+    let xVelocities = velocityChart.data.datasets[0].data;
+    xVelocities.forEach(function (item, index) {
+      if( index > integrationTime-1 ) {
+        let acceleration = getAcceleration( xVelocities[index - integrationTime], item);
+        xAcceleration.push( {x: acceleration.t, y: acceleration.a} );
+      }
+    });
+    let yAcceleration = [];
+    let yVelocities = velocityChart.data.datasets[1].data;
+    yVelocities.forEach(function (item, index) {
+      if( index > integrationTime-1 ) {
+        let acceleration = getAcceleration( yVelocities[index - integrationTime], item);
+        yAcceleration.push( {x: acceleration.t, y: acceleration.a} );
+      }
+    });
+    accelerationChart.data.datasets[0].data = xAcceleration;
+    accelerationChart.data.datasets[1].data = yAcceleration;
+    accelerationChart.update();  
+  }
+
+  function getAcceleration(velocity1, velocity2){
+    let dt = velocity2.x - velocity1.x;
+    let meanT = 0.5*( velocity1.x + velocity2.x );
+    let acceleration = (velocity2.y - velocity1.y ) / dt;
+    return { t: meanT, a : acceleration }; 
+  }
+  
   function getTime(targetFrame) {
     return t0 + (targetFrame + 0.5)/FPS;
   }
@@ -1137,5 +1223,20 @@ function onVideoStarted() {
   });
   velocityChart.options.scales.yAxes[0].scaleLabel.labelString = "Velocity (m/s)";
 
+  let aData = { datasets: [{ label: 'x', fill: 'false', pointBackgroundColor: 'red', 
+                        borderColor: 'red', backgroundColor: 'red' },
+                       { label: 'y', fill: 'false', pointBackgroundColor: 'blue', 
+                        borderColor: 'blue', backgroundColor: 'blue' }] };
+
+  let accelerationCtx = document.getElementById('accelerationChart').getContext('2d');
+  let accelerationChart = new Chart(accelerationCtx, {  
+    type: 'line',
+    data: aData,
+    options: options
+  });
+  accelerationChart.options.scales.yAxes[0].scaleLabel.labelString = "Acceleration (m/s²)";
+
+  
+  
 })();
 

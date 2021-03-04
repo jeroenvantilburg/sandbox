@@ -151,6 +151,7 @@
         </table>
         <canvas id="positionChart" style="border:1px solid #ccc" width="350" height="250"></canvas>
         <canvas id="velocityChart" style="border:1px solid #ccc" width="350" height="250"></canvas>
+        <canvas id="accelerationChart" style="border:1px solid #ccc; display: none;" width="350" height="250"></canvas>
       </div>
     </div>
   </div>
@@ -165,9 +166,6 @@
           &copy; 2021 Jeroen van Tilburg, MIT licentie <br/>
           Feedback to <feedback></feedback> <br/> 
           Source code: <a href="https://github.com/jeroenvantilburg/vmtracker">Github</a> <br/>
-          <!--Beschikbare versies: <br/><a href="index_prev.html">Vorige versie</a> (2.1)<br/> 
-                   <a href="index.html">Standaardversie</a> (2.2) <br/>
-                   <a href="index_dev.html">Ontwikkelversie</a> (2.3)<br/-->
       </center>
     </div>
   </div>
@@ -202,6 +200,13 @@
       </input>
       </td><td>Number of frames used to calculate velocity. A larger integration time results in a smoother velocity graph, but a decreased sensitivity to changes in the velocity.</td></tr>
       </tr>
+    <tr><td>Display velocity:</td><td>
+    <input type="checkbox" id="showVelocity"></td>
+      <td>Show or hide the velocity graph.</td></tr>
+    <tr><td>Display acceleration:</td><td>
+    <input type="checkbox" id="showAcceleration"></td>
+      <td>Show or hide the acceleration graph.</td></tr>
+
     </table>
 
     <br/>
@@ -209,7 +214,7 @@
 
 
     <table>
-      <tr><th colspan="3">Exporting CSV files</th></tr>
+      <tr><th colspan="3">Export CSV files</th></tr>
       <tr><td>Decimal separator:</td><td>
     <select id="decimalSeparatorInput" name="decimalSep">
       <option value=".">.</option>
