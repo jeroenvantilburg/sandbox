@@ -225,7 +225,7 @@
     velocities.forEach(function (item, index) {
       if( index > integrationTime-1 ) {
         let prevItem = velocities[index - integrationTime];
-        let frame = 0.5*(item.frame + prevItem[index-integrationTime].frame);
+        let frame = 0.5*(item.frame + prevItem.frame);
         let meanT = 0.5*(item.t + prevItem.t);
         let dt = item.t - prevItem.t;
         let accelX = (item.x - prevItem.x) / dt;
@@ -238,7 +238,8 @@
     // Frame tolerance decides when velocities are grouped with position entries in one row
     let frameTolerance = avoidEmptyCells ? 0.51 : 0.01;
     
-    // Fill csvData with sequential times
+    // Create temporary data with positions and velocities (time ordered)
+    let tempData = [];
     let vIndex = 0;
     rawData.forEach(function (item, index) {
       let thisFrame = item.t;
@@ -249,44 +250,52 @@
       while( vIndex < velocities.length && 
             velocities[vIndex].frame < thisFrame - frameTolerance ) {
         // add only the velocity
-        csvData.push({[timeStr]: toCSV( velocities[vIndex].t ), 
-                      [velXStr]: toCSV( velocities[vIndex].x ), 
-                      [velYStr]: toCSV( velocities[vIndex].y )}  );
+        tempData.push({ frame    : velocities[vIndex].frame,
+                        [timeStr]: toCSV( velocities[vIndex].t ), 
+                        [velXStr]: toCSV( velocities[vIndex].x ), 
+                        [velYStr]: toCSV( velocities[vIndex].y )}  );
         ++vIndex;
       }
-      // check if velocity has same frame number
+      
+      // Add the position data
+      let n = tempData.push({ frame    : thisFrame,
+                              [timeStr]: toCSV(time), 
+                              [posXStr]: toCSV(pos.x), 
+                              [posYStr]: toCSV(pos.y)}  );        
+
+      // if velocity has same frame number merge it with this entry
       if( vIndex < velocities.length && velocities[vIndex].frame - thisFrame < frameTolerance ) { 
         // combine items
-        // TODO: only add the velocity part
-        csvData.push({[timeStr]: toCSV(time), 
-                      [posXStr]: toCSV(pos.x), 
-                      [posYStr]: toCSV(pos.y),
-                      [velXStr]: toCSV(velocities[vIndex].x), 
-                      [velYStr]: toCSV(velocities[vIndex].y)}  );
+        tempData[n-1][velXStr] = toCSV(velocities[vIndex].x);
+        tempData[n-1][velYStr] = toCSV(velocities[vIndex].y);
         ++vIndex;
-      } else { // add only the position
-        // TODO: do this first and save the item
-        csvData.push({[timeStr]: toCSV(time), 
-                      [posXStr]: toCSV(pos.x), 
-                      [posYStr]: toCSV(pos.y)}  );        
       }
     });
     
-    // TODO: first create temporary csvData above WITH frame number
-    // then loop over temporry csvData and add acceleration (like above)
-    // only difference: copy data from temporary csvData to final csvData
-    
-    
-    /*let csvIndex = 1;
-    velocities.forEach(function (item, index) {
-      // find first entry in csvData with same frame
-      while( cvsIndex < csvData.length && 
-             csvData[cvsIndex].frame < thisFrame - frameTolerance ) {
-        // insert data in csvData??? --> not a good idea!
-        
+    // Loop over temporary data and add acceleration data
+    let aIndex = 0;
+    tempData.forEach(function (item, index) {
+      let thisFrame = item.frame;
+      // add all accelerations before this item
+      while( aIndex < accelerations.length && 
+             accelerations[aIndex].frame < thisFrame - frameTolerance ) {
+        csvData.push({[timeStr]: toCSV( accelerations[aIndex].t ), 
+                      [accXStr]: toCSV( accelerations[aIndex].x ), 
+                      [accYStr]: toCSV( accelerations[aIndex].y )}  );
+        ++aIndex;
       }
-      
-    });*/
+      // Copy the temporary data to csvData
+      delete item.frame;
+      let n = csvData.push( item );        
+
+      // if acceleration has same frame number merge it with this entry
+      if( aIndex < accelerations.length && accelerations[aIndex].frame - thisFrame < frameTolerance ) { 
+        // combine items
+        csvData[n-1][accXStr] = toCSV(accelerations[aIndex].x);
+        csvData[n-1][accYStr] = toCSV(accelerations[aIndex].y);
+        ++aIndex;
+      }       
+    });
     
 
     var csv = Papa.unparse( csvData, {quotes : true, 

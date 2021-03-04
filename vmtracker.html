@@ -194,18 +194,19 @@
       <h2>Settings</h2>
         
     <table>
-      <tr><th colspan="3">Velocity calculation</th></tr>
+      <tr><th colspan="3">Derived data</th></tr>
+    <tr><td>Display velocity:</td><td>
+    <input type="checkbox" id="showVelocity"></td>
+      <td>Show or hide the velocity data.</td></tr>
+    <tr><td>Display acceleration:</td><td>
+    <input type="checkbox" id="showAcceleration"></td>
+      <td>Show or hide the acceleration data.</td></tr>
+
       <tr><td>Integration time:</td><td>
       <input id="integrationTimeInput" type="number" min="1" step="1" max="10">
       </input>
-      </td><td>Number of frames used to calculate velocity. A larger integration time results in a smoother velocity graph, but a decreased sensitivity to changes in the velocity.</td></tr>
+      </td><td>Number of frames used to calculate velocity/acceleration. A larger integration time results in smoother velocity and acceleration graphs, but a decreased sensitivity to changes in the velocity/acceleration.</td></tr>
       </tr>
-    <tr><td>Display velocity:</td><td>
-    <input type="checkbox" id="showVelocity"></td>
-      <td>Show or hide the velocity graph.</td></tr>
-    <tr><td>Display acceleration:</td><td>
-    <input type="checkbox" id="showAcceleration"></td>
-      <td>Show or hide the acceleration graph.</td></tr>
 
     </table>
 
