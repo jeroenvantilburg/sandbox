@@ -47,7 +47,8 @@
   let rawData = [];
   let videoName = "";
 
-  // Settings. TODO let user modify it...
+  // Settings.
+  let framesToSkip = 1;
   let showVelocity = ($('#velocityChart').css('display') != 'none' );
   let showAcceleration = ($('#accelerationChart').css('display') != 'none' );
   let decimalSeparator = getDecimalSeparator();
@@ -59,6 +60,15 @@
   let pixelsPerMeter;
   let originX, originY; // in pixels
 
+  $("#framesToSkip").val( framesToSkip );
+  $("#framesToSkip").on("keydown",blurOnEnter);
+  $("#framesToSkip").change( function() {
+    if( isNumeric(this.value) ) {
+      framesToSkip = Math.round( toNumber(this.value) );
+    }
+    this.value = framesToSkip || "";
+  });
+  
   $("#integrationTimeInput").val( integrationTime );
   $("#integrationTimeInput").on("keydown",blurOnEnter);
   $("#integrationTimeInput").change( function() {
@@ -926,7 +936,7 @@
     updatePlots();
     
     // Go to next frame
-    gotoFrame(frameNumber+1);
+    gotoFrame(frameNumber+framesToSkip);
     
   }
 
