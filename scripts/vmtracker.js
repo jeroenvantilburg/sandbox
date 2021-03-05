@@ -38,6 +38,12 @@
   var canvas = this.__canvas = new fabric.StaticCanvas('canvasOutput');
   fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
   
+  let markerPoint = new fabric.Circle({ radius: 3, stroke: 'rgba(200,0,0)', strokeWidth: 1, 
+                                        fill: 'rgba(0,0,0,0)' });
+  function highlightMarker( markerP ) {
+    markerP.set({stroke: 'red', strokeWidth: 2});
+  }
+
   /*canvas.add(
     new fabric.Rect({ top: 100, left: 100, width: 50, height: 50, fill: '#f55' }),
     new fabric.Circle({ top: 140, left: 230, radius: 75, fill: 'green' }),
@@ -56,6 +62,7 @@
   let videoName = "";
 
   // Settings.
+  let drawAllPoints = true;
   let framesToSkip = 1;
   let showVelocity = ($('#velocityChart').css('display') != 'none' );
   let showAcceleration = ($('#accelerationChart').css('display') != 'none' );
@@ -67,6 +74,13 @@
   let scale1, scale2;
   let pixelsPerMeter;
   let originX, originY; // in pixels
+
+  $('#drawAllPoints').prop('checked',drawAllPoints);
+  $('#drawAllPoints').on('change', function(e) {
+    drawAllPoints = $('#drawAllPoints').is(':checked');
+    gotoFrame( frameNumber );
+  });
+
 
   $("#framesToSkip").val( framesToSkip );
   $("#framesToSkip").on("keydown",blurOnEnter);
@@ -968,7 +982,7 @@
 
     //console.log(evt);
 
-    console.log(posPx);
+    //console.log(posPx);
 
     /*let circle = new fabric.Circle({ left: posPx.x, top: posPx.y, radius: 3, 
                                     stroke: 'red', strokeWidth: 1, fill: 'rgba(0,0,0,0)' });
@@ -981,8 +995,14 @@
     // Update plots
     updatePlots();
     
-    // Go to next frame
-    gotoFrame(frameNumber+framesToSkip);
+    let markerP = fabric.util.object.clone( markerPoint ) ;
+    markerP.set({left: posPx.x, top: posPx.y});
+    highlightMarker( markerP );
+    canvas.add(markerP );
+
+
+    // Go to next frame with a small delay
+    setTimeout(function() { gotoFrame(frameNumber+framesToSkip); }, 200);
     
   }
 
@@ -1095,12 +1115,17 @@
         slider.value = frameNumber;
         
         canvas.clear();
-        let point = rawData.find( function(item) { return item.t === targetFrame; });
-        if( point ) {
-          let circle = new fabric.Circle({ left: point.x, top: point.y, radius: 3, 
-                                           stroke: 'red', strokeWidth: 1, fill: 'rgba(0,0,0,0)' });
-          canvas.add( circle );
-        }
+        rawData.forEach( function(item) {
+          let markerP = fabric.util.object.clone( markerPoint ) ;
+          markerP.set({left: item.x, top: item.y});
+          if( item.t === targetFrame ) {
+            highlightMarker( markerP );
+            canvas.add(markerP );
+          } else if ( drawAllPoints ) {
+            canvas.add( markerP );            
+          }
+        });
+
         
       });
       return true;
