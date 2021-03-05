@@ -689,6 +689,7 @@
 
   function disableAnalysis() {    
     startAndStopManual.innerText = startText;
+    statusMsg.innerHTML = "";
     //startAndStopManual.style.backgroundColor = "#c3d6be";
     canvasClick = "";
     startAndStopManual.setAttribute('disabled', '');
@@ -892,9 +893,23 @@
       startAndStopManual.classList.add("button-on");
     }
     canvasClick = "setOrigin";
+     
     // set statusMsg
-    statusMsg.innerHTML = "Click on the origin...";
+    statusMsg.innerHTML = "Click on the (new) origin...";
+        
+    drawAxes();
   });
+  
+  // Draw the axis    
+  function drawAxes() {
+    let xAxis = new fabric.Line([0,originYInput.value,width,originYInput.value], 
+                                {strokeWidth: 2, stroke: 'blue' });    
+    let yAxis = new fabric.Line( [originXInput.value,0,originXInput.value, height], 
+                                 {strokeWidth: 2, stroke: 'blue' });    
+    canvas.add( xAxis );
+    canvas.add( yAxis );
+    canvas.renderAll();    
+  }
   
   // update origin
   function setOrigin(evt) {
@@ -909,7 +924,13 @@
     
     // Reset statusMsg and canvas click event
     canvasClick = "";
-    statusMsg.innerHTML = "";
+    
+    canvas.clear();
+    drawAxes();
+    setTimeout( function() {     
+      statusMsg.innerHTML = "";
+      gotoFrame( frameNumber); 
+    }, 500); 
   }
   
   // Set scale button
@@ -964,11 +985,12 @@
 
     if( startAndStopManual.innerText === startText ) {
       startAndStopManual.innerText = stopText;
+      statusMsg.innerHTML = "Click on the object";
       //startAndStopManual.style.backgroundColor = "darkred";
       canvasClick = "addRawDataPoint";
     } else {
       startAndStopManual.innerText = startText;
-      //startAndStopManual.style.backgroundColor = "#4CAF50";
+      statusMsg.innerHTML = "";
       canvasClick = "";
     }
     startAndStopManual.classList.toggle('button-on');
