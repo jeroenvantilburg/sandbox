@@ -7,7 +7,6 @@
   <link rel="stylesheet" type="text/css" href="style_vmt.css" media="screen,projection" />
   <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <!--link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"-->
   <base target="_blank">
 </head>  
 <body>
@@ -32,7 +31,7 @@
   </div>
   
   <div class="body">
-    <div class="main">  
+    <div class="page">  
 	  	<div class="page-header">               
         <div class="center">
           <button id="startAndStopAuto" disabled hidden>Automatic</button>
@@ -51,7 +50,7 @@
           <button id="zoomIn" disabled><i class="fa fa-search-plus"></i></button>
         </div>
       </div>
-      <div class="content">
+      <div class="page-content">
         <div class="container" style="position:relative">
           <video id="video" autoplay playsinline muted style="display:block"></video>
           <canvas style="position:absolute;top:0;border:0px solid #ccc" id="canvasOutput"></canvas>
@@ -63,7 +62,7 @@
       <div class="side-header">
         Data        
       </div>
-      <div class="side-main">
+      <div class="side-content">
         <table style="border-spacing: 0;">
           <tr>
             <td>Frame rate:</td>
@@ -151,7 +150,9 @@
         <tr>
           <td>Integration time:</td>
           <td><input id="integrationTimeInput" type="number" min="1" step="1" max="10"></input></td>
-          <td>Number of frames used to calculate velocity/acceleration. A larger integration time results in smoother velocity and acceleration graphs, but a decreased sensitivity to changes in the velocity/acceleration.</td>
+          <td>Number of frames used to calculate velocity/acceleration. 
+            A larger integration time results in smoother velocity and acceleration graphs, 
+            but a decreased sensitivity to changes in the velocity/acceleration.</td>
         </tr>
       </table>
       <br/>
@@ -182,7 +183,8 @@
         <tr>
           <td>Avoid empty cells:</td>
           <td><input type="checkbox" id="avoidEmptyCells"></td>
-          <td>Adjust the velocity time stamps by at most half a frame. This avoids empty cells, but slightly reduces the accuracy of the velocity time stamp.</td>
+          <td>Adjust the velocity time stamps by at most half a frame. This avoids empty cells, 
+            but slightly reduces the accuracy of the velocity time stamp.</td>
         </tr>
       </table>
     </div>
@@ -204,8 +206,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.3.1/fabric.min.js"></script>
-  <script async src="https://docs.opencv.org/3.4.0/opencv.js" id="opencv" type="text/javascript"></script>  
+  <script async src="https://docs.opencv.org/3.4.0/opencv.js" id="opencv"></script>  
   <script src="scripts/vmtracker.js"></script>
+  <noscript>Your browser does not support JavaScript!</noscript> 
 
 </body>
 </html>

@@ -13,19 +13,18 @@
   let videoInput     = document.getElementById('videoInput');
   let fpsInput       = document.getElementById('fpsInput');
   let statusMsg      = document.getElementById("statusMsg");
-  let mediaInfoResult= document.getElementById('mediaInfoResult');
   let showMediaInfo  = document.getElementById('showMediaInfo');
   let originButton   = document.getElementById('origin');
   let originXInput   = document.getElementById('originXInput');
   let originYInput   = document.getElementById('originYInput');  
   let scaleButton    = document.getElementById('scale');
   let scaleInput     = document.getElementById('scaleInput');  
-  let prevButton     = document.getElementById('prev');
-  let playButton     = document.getElementById('play');
-  let nextButton     = document.getElementById('next');
+  //let prevButton     = document.getElementById('prev');
+  //let playButton     = document.getElementById('play');
+  //let nextButton     = document.getElementById('next');
   let slider         = document.getElementById('slider');
-  let zoomOut        = document.getElementById('zoomOut');
-  let zoomIn         = document.getElementById('zoomIn');
+  //let zoomOut        = document.getElementById('zoomOut');
+  //let zoomIn         = document.getElementById('zoomIn');
   let canvasOutput   = document.getElementById('canvasOutput');
   let canvasContext  = canvasOutput.getContext('2d');
   let frameCounter   = document.getElementById("frameNumber")  
@@ -140,7 +139,8 @@
     avoidEmptyCells = $('#avoidEmptyCells').is(':checked');
   });
     
-  zoomOut.addEventListener('click', () => {
+  //zoomOut.addEventListener('click', () => {
+  $("#zoomOut").click( () => {
     /*console.log("zoom: " + canvasOutput.width / width );
     if( canvasOutput.width > 200 ) { // minimum 200 px should be small enough
       drawVideo(0.5*canvasOutput.width, 0.5*canvasOutput.height);
@@ -152,7 +152,8 @@
 
   });
 
-  zoomIn.addEventListener('click', () => {
+  //zoomIn.addEventListener('click', () => {
+  $("#zoomIn").click( () => {
     /*console.log("zoom: " + canvasOutput.width / width );
     if( canvasOutput.width < 8 * width ) { // Maximum zoom x8
       drawVideo(2*canvasOutput.width, 2*canvasOutput.height)
@@ -162,8 +163,6 @@
       drawVideo(2*canvas.width, 2*canvas.height)
     }
 
-
-    
   });
 
   function drawVideo(canvasWidth, canvasHeight) {
@@ -646,13 +645,15 @@
   
   // Enable the video control buttons
   function enableVideoControl() {
-    prevButton.removeAttribute('disabled');
-    playButton.removeAttribute('disabled');
-    nextButton.removeAttribute('disabled');
-    slider.removeAttribute('disabled');
-    zoomIn.removeAttribute('disabled');
-    zoomOut.removeAttribute('disabled');
-    
+    $('#prev').removeAttr('disabled');
+    $('#play').removeAttr('disabled');
+    $('#next').removeAttr('disabled');
+    $('#slider').removeAttr('disabled');
+    //zoomIn.removeAttribute('disabled');
+    //zoomOut.removeAttribute('disabled');
+    $("#zoomIn").removeAttr('disabled');
+    $("#zoomOut").removeAttr('disabled');
+
     //scaleInput.style.background = 'pink';
   }
 
@@ -663,12 +664,15 @@
     showMediaInfo.setAttribute('disabled', '');
     originButton.setAttribute('disabled', '');
     scaleButton.setAttribute('disabled', '');
-    prevButton.setAttribute('disabled', '');
-    playButton.setAttribute('disabled', '');
-    nextButton.setAttribute('disabled', '');
-    slider.setAttribute('disabled', '');  
-    zoomIn.setAttribute('disabled', '');  
-    zoomOut.setAttribute('disabled', '');  
+    $('#prev').attr('disabled', '');
+    $('#play').attr('disabled', '');
+    $('#next').attr('disabled', '');
+    $('#slider').attr('disabled', '');  
+    //zoomIn.setAttribute('disabled', '');  
+    //zoomOut.setAttribute('disabled', '');  
+    $("#zoomIn").attr('disabled', '');
+    $("#zoomOut").attr('disabled', '');
+
 
     //fpsInput.style.background = 'pink';
   }
@@ -767,11 +771,7 @@
           });
 
           mediainfo.analyzeData(getSize, readChunk).then((result) => {
-            //mediaInfoResult.value = JSON.stringify(result, undefined, 4);
-            //mediaInfoResult.innerHTML = JSON.stringify(result, undefined, 4);
-            
-            // 
-            mediaInfoResult.innerHTML += convertToTable(result.media.track);
+            $("#mediaInfoResult").append( convertToTable(result.media.track) );
 
             //console.log(result);
             result.media.track.forEach(track => {
@@ -814,12 +814,14 @@
   }
   
   
-  prevButton.addEventListener('click', evt => {
+  //prevButton.addEventListener('click', evt => {
+  $('#prev').click(function() {
     // Go to next frame
     gotoFrame(frameNumber-1);
   });
 
-  nextButton.addEventListener('click', evt => {
+  //nextButton.addEventListener('click', evt => {
+  $('#next').click(function() {
     // Go to next frame
     gotoFrame(frameNumber+1);
   });
@@ -1122,6 +1124,20 @@
 
   function gotoFrame(targetFrame) {
     let newTime = (targetFrame + 0.5)/FPS;
+    
+    // Redraw the data markers
+    canvas.clear();
+    rawData.forEach( function(item) {
+      let markerP = fabric.util.object.clone( markerPoint ) ;
+      markerP.set({left: item.x, top: item.y});
+      if( item.t === targetFrame ) {
+         highlightMarker( markerP );
+         canvas.add(markerP );
+      } else if ( drawAllPoints ) { 
+        canvas.add( markerP );    
+      }    
+    });
+    
     if( newTime < t0 ) {
       return false;
     } else if( newTime > video.duration ) {
@@ -1134,21 +1150,7 @@
         //canvasContext.drawImage(video,0,0, width, height );
         //drawVideo();
         frameCounter.innerHTML = frameNumber + " / " +slider.max;
-        slider.value = frameNumber;
-        
-        canvas.clear();
-        rawData.forEach( function(item) {
-          let markerP = fabric.util.object.clone( markerPoint ) ;
-          markerP.set({left: item.x, top: item.y});
-          if( item.t === targetFrame ) {
-            highlightMarker( markerP );
-            canvas.add(markerP );
-          } else if ( drawAllPoints ) {
-            canvas.add( markerP );            
-          }
-        });
-
-        
+        slider.value = frameNumber;        
       });
       return true;
     }
