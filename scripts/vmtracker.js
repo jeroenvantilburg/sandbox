@@ -10,23 +10,23 @@
   
     // HTML elements
   let video          = document.getElementById('video');
-  let videoInput     = document.getElementById('videoInput');
+  //let videoInput     = document.getElementById('videoInput');
   let fpsInput       = document.getElementById('fpsInput');
   let statusMsg      = document.getElementById("statusMsg");
-  let showMediaInfo  = document.getElementById('showMediaInfo');
-  let originButton   = document.getElementById('origin');
+  //let showMediaInfo  = document.getElementById('showMediaInfo');
+  //let originButton   = document.getElementById('origin');
   let originXInput   = document.getElementById('originXInput');
   let originYInput   = document.getElementById('originYInput');  
-  let scaleButton    = document.getElementById('scale');
+  //let scaleButton    = document.getElementById('scale');
   let scaleInput     = document.getElementById('scaleInput');  
   //let prevButton     = document.getElementById('prev');
   //let playButton     = document.getElementById('play');
   //let nextButton     = document.getElementById('next');
-  let slider         = document.getElementById('slider');
+  //let slider         = document.getElementById('slider');
   //let zoomOut        = document.getElementById('zoomOut');
   //let zoomIn         = document.getElementById('zoomIn');
-  let canvasOutput   = document.getElementById('canvasOutput');
-  let canvasContext  = canvasOutput.getContext('2d');
+  //let canvasOutput   = document.getElementById('canvasOutput');
+  //let canvasContext  = canvasOutput.getContext('2d');
   let frameCounter   = document.getElementById("frameNumber")  
   let startAndStopAuto = document.getElementById('startAndStopAuto');
   let startAndStopManual = document.getElementById('startAndStopManual');
@@ -542,8 +542,8 @@
     // Enable manually setting frame rate
     //fpsInput.removeAttribute("disabled");
     
-    originButton.removeAttribute('disabled');
-    scaleButton.removeAttribute('disabled');
+    $('#origin').removeAttr('disabled');
+    $('#scale').removeAttr('disabled');
     
     // Highlight fields that need to be filled
     scaleInput.style.background = 'pink';
@@ -587,7 +587,7 @@
       
       if( video.src !== "" ) {
         // Update the slider
-        slider.max = Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1;
+        $("#slider").attr("max", Math.floor( ((video.duration-t0) * FPS).toFixed(1) ) - 1 );
     
         // Always reset to first frame
         gotoFrame( 0 );
@@ -661,9 +661,9 @@
   function disableVideoControl() {
     frameCounter.innerHTML = "0 / 0";
 
-    showMediaInfo.setAttribute('disabled', '');
-    originButton.setAttribute('disabled', '');
-    scaleButton.setAttribute('disabled', '');
+    $('#showMediaInfo').attr('disabled', '');
+    $('#origin').attr('disabled', '');
+    $('#scale').attr('disabled', '');
     $('#prev').attr('disabled', '');
     $('#play').attr('disabled', '');
     $('#next').attr('disabled', '');
@@ -707,9 +707,7 @@
   });
                       
   // Event listener for the modal boxes
-  showMediaInfo.addEventListener('click', evt => {
-    showModal("mediaInfoModal");
-  });
+  $("#showMediaInfo").click( evt => { showModal("mediaInfoModal"); });
   $("#showAbout").click( evt => { showModal("aboutModal");} );
   $("#showHelp").click( evt => { showModal("helpModal");} );
   $("#showSettings").click( evt => { showModal("settingsModal");} );
@@ -754,7 +752,7 @@
     statusMsg.innerHTML = "Calculating FPS... <i class='fa fa-spinner fa-spin fa-fw'></i>"
     
     MediaInfo({ format: 'object' }, (mediainfo) => {
-      const file = videoInput.files[0];
+      const file = $('#videoInput').prop('files')[0];
       if (file) {        
         const getSize = () => file.size;
 
@@ -771,7 +769,7 @@
           });
 
           mediainfo.analyzeData(getSize, readChunk).then((result) => {
-            $("#mediaInfoResult").append( convertToTable(result.media.track) );
+            $("#mediaInfoResult").html( convertToTable(result.media.track) );
 
             //console.log(result);
             result.media.track.forEach(track => {
@@ -779,7 +777,7 @@
                 // Set the new FPS
                 fpsInput.value = track.FrameRate;
                 fpsInput.onchange();
-                showMediaInfo.removeAttribute("disabled");
+                $("#showMediaInfo").removeAttr("disabled");
                 statusMsg.innerHTML = "";
               }
             } );
@@ -866,14 +864,14 @@
     }
   });*/
 
-  slider.onchange = function() {
+  $("#slider").change( function() {
     // Go to next frame
     gotoFrame(Math.floor(this.value));
-  }
+  });
 
 
   let canvasClick = "";
-  canvasOutput.addEventListener('click', (evt) => {
+  $('#canvasOutput').click( (evt) => {
     console.log("canvas is clicked="+canvasClick);
     if( canvasClick === "addRawDataPoint" ) {
       addRawDataPoint(evt);
@@ -887,7 +885,7 @@
   });
 
   // Set origin button
-  originButton.addEventListener('click', evt => {
+  $('#origin').click( evt => {
     if( canvasClick === "addRawDataPoint") {
       startAndStopManual.innerText = startText;
       //startAndStopManual.style.backgroundColor = "#4CAF50";
@@ -916,7 +914,7 @@
   // update origin
   function setOrigin(evt) {
     // Get mouse position in pixels
-    let posPx = getMousePos(canvasOutput, evt);
+    let posPx = getMousePos( evt );
     
     // Update origin
     originXInput.value = posPx.x;
@@ -936,7 +934,7 @@
   }
   
   // Set scale button
-  scaleButton.addEventListener('click', evt => {
+  $('#scale').click( evt => {
     if( canvasClick === "addRawDataPoint") {
       startAndStopManual.innerText = startText;
       //startAndStopManual.style.backgroundColor = "#4CAF50";
@@ -951,7 +949,7 @@
   // Set the scale (1st point)
   function setScale1(evt) {
     // Get mouse position in pixels
-    let posPx = getMousePos(canvasOutput, evt);
+    let posPx = getMousePos( evt );
     
     // Set the scale (1st point)
     scale1 = {x: posPx.x, y: posPx.y};
@@ -964,7 +962,7 @@
   // Set the scale (2nd point)
   function setScale2(evt) {
     // Get mouse position in pixels
-    let posPx = getMousePos(canvasOutput, evt);
+    let posPx = getMousePos( evt );
     
     let distanceInMeter = toNumber( prompt("How long is this distance in meter?", "1.0") );
     
@@ -1002,7 +1000,7 @@
 
   function addRawDataPoint(evt) {
     // Get mouse position in pixels
-    let posPx = getMousePos(canvasOutput, evt);
+    let posPx = getMousePos( evt );
 
     //console.log(evt);
 
@@ -1149,14 +1147,14 @@
         e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
         //canvasContext.drawImage(video,0,0, width, height );
         //drawVideo();
-        frameCounter.innerHTML = frameNumber + " / " +slider.max;
-        slider.value = frameNumber;        
+        frameCounter.innerHTML = frameNumber + " / " + $("#slider").attr("max");
+        $("#slider").val( frameNumber );
       });
       return true;
     }
   }
 
-  function getMousePos(thisCanvas, evt) {
+  function getMousePos( evt ) {
 
     /*let rect = thisCanvas.getBoundingClientRect();
     let scaleX = thisCanvas.width / width;    // relationship bitmap vs. element for X
