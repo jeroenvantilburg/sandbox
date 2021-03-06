@@ -10,15 +10,16 @@
   
     // HTML elements
   let video          = document.getElementById('video');
-  //let videoInput     = document.getElementById('videoInput');
   let fpsInput       = document.getElementById('fpsInput');
-  let statusMsg      = document.getElementById("statusMsg");
-  //let showMediaInfo  = document.getElementById('showMediaInfo');
-  //let originButton   = document.getElementById('origin');
   let originXInput   = document.getElementById('originXInput');
   let originYInput   = document.getElementById('originYInput');  
-  //let scaleButton    = document.getElementById('scale');
   let scaleInput     = document.getElementById('scaleInput');  
+
+  //let statusMsg      = document.getElementById("statusMsg");
+  //let videoInput     = document.getElementById('videoInput');
+  //let showMediaInfo  = document.getElementById('showMediaInfo');
+  //let originButton   = document.getElementById('origin');
+  //let scaleButton    = document.getElementById('scale');
   //let prevButton     = document.getElementById('prev');
   //let playButton     = document.getElementById('play');
   //let nextButton     = document.getElementById('next');
@@ -27,7 +28,7 @@
   //let zoomIn         = document.getElementById('zoomIn');
   //let canvasOutput   = document.getElementById('canvasOutput');
   //let canvasContext  = canvasOutput.getContext('2d');
-  let frameCounter   = document.getElementById("frameNumber")  
+  //let frameCounter   = document.getElementById("frameNumber")  
   let startAndStopAuto = document.getElementById('startAndStopAuto');
   let startAndStopManual = document.getElementById('startAndStopManual');
   
@@ -60,27 +61,23 @@
   let rawData = [];
   let videoName = "";
 
-  // Settings.
-  let drawAllPoints = true;
-  let framesToSkip = 1;
-  let showVelocity = ($('#velocityChart').css('display') != 'none' );
-  let showAcceleration = ($('#accelerationChart').css('display') != 'none' );
-  let decimalSeparator = getDecimalSeparator();
-  let integrationTime = 2;
-  let delimiter = ",";
-  let avoidEmptyCells = false;
-
+  // ...  
   let scale1, scale2;
   let pixelsPerMeter;
   let originX, originY; // in pixels
+  
+  /* ========== USER SETTINGS ======================
+     These settings can be changed in settings menu
+   ================================================= */
 
+  let drawAllPoints = true;
   $('#drawAllPoints').prop('checked',drawAllPoints);
   $('#drawAllPoints').on('change', function(e) {
     drawAllPoints = $('#drawAllPoints').is(':checked');
     gotoFrame( frameNumber );
   });
 
-
+  let framesToSkip = 1;
   $("#framesToSkip").val( framesToSkip );
   $("#framesToSkip").on("keydown",blurOnEnter);
   $("#framesToSkip").change( function() {
@@ -91,6 +88,7 @@
     }
   });
   
+  let integrationTime = 2;
   $("#integrationTimeInput").val( integrationTime );
   $("#integrationTimeInput").on("keydown",blurOnEnter);
   $("#integrationTimeInput").change( function() {
@@ -101,12 +99,14 @@
     this.value = integrationTime || "";
   });
 
+  let showVelocity = ($('#velocityChart').css('display') != 'none' );
   $('#showVelocity').prop('checked',showVelocity);
   $('#showVelocity').on('change', function(e) {
     showVelocity = $('#showVelocity').is(':checked');
     $('#velocityChart').toggle();
   });
   
+  let showAcceleration = ($('#accelerationChart').css('display') != 'none' );
   $('#showAcceleration').prop('checked',showAcceleration);
   $('#showAcceleration').on('change', function(e) {
     showAcceleration = $('#showAcceleration').is(':checked');
@@ -114,31 +114,34 @@
   });
   
   
+  let decimalSeparator = getDecimalSeparator();
   $("#decimalSeparatorInput").val( decimalSeparator );
   $("decimalSep").html( decimalSeparator );
   $("#decimalSeparatorInput").change( function() { 
     decimalSeparator = this.value ;
     $("decimalSep").html( decimalSeparator );
   });
-
-  /*$('input[name=decimalSeparatorInput][value="' + decimalSeparator +'"]').prop('checked',true);
-  $('input[name=decimalSeparatorInput]').on('change', function(e) {
-    decimalSeparator = document.querySelector('input[name="decimalSeparatorInput"]:checked').value;
-  });*/
   
-  
+  let delimiter = ",";
   $("#delimiterInput").val( delimiter );
   $("delimiter").html( delimiter );
-  //$("#delimiterInput").on("keydown",blurOnEnter);
   $("#delimiterInput").change( function() { 
     delimiter = this.value ; 
     $("delimiter").html( delimiter === "tab" ? "&nbsp;&nbsp;&nbsp;&nbsp;" : delimiter );  
   });
 
+  let avoidEmptyCells = false;
   $('#avoidEmptyCells').on('change', function(e) {
     avoidEmptyCells = $('#avoidEmptyCells').is(':checked');
   });
-    
+
+  
+  /*$('input[name=decimalSeparatorInput][value="' + decimalSeparator +'"]').prop('checked',true);
+  $('input[name=decimalSeparatorInput]').on('change', function(e) {
+    decimalSeparator = document.querySelector('input[name="decimalSeparatorInput"]:checked').value;
+  });*/
+  
+
   //zoomOut.addEventListener('click', () => {
   $("#zoomOut").click( () => {
     /*console.log("zoom: " + canvasOutput.width / width );
@@ -576,7 +579,7 @@
       rawData = [];
 
       // Remove status message
-      statusMsg.innerHTML = "";   
+      $('#statusMsg').html( "" );   
       this.style.background = ""; // remove pink alert
 
       // Set the new FPS
@@ -649,18 +652,13 @@
     $('#play').removeAttr('disabled');
     $('#next').removeAttr('disabled');
     $('#slider').removeAttr('disabled');
-    //zoomIn.removeAttribute('disabled');
-    //zoomOut.removeAttribute('disabled');
     $("#zoomIn").removeAttr('disabled');
     $("#zoomOut").removeAttr('disabled');
-
-    //scaleInput.style.background = 'pink';
   }
 
   // Disable the video control buttons
   function disableVideoControl() {
-    frameCounter.innerHTML = "0 / 0";
-
+    $('#frameNumber').html( "0 / 0" );
     $('#showMediaInfo').attr('disabled', '');
     $('#origin').attr('disabled', '');
     $('#scale').attr('disabled', '');
@@ -668,13 +666,8 @@
     $('#play').attr('disabled', '');
     $('#next').attr('disabled', '');
     $('#slider').attr('disabled', '');  
-    //zoomIn.setAttribute('disabled', '');  
-    //zoomOut.setAttribute('disabled', '');  
     $("#zoomIn").attr('disabled', '');
     $("#zoomOut").attr('disabled', '');
-
-
-    //fpsInput.style.background = 'pink';
   }
 
   function enableAnalysis() {
@@ -693,7 +686,7 @@
 
   function disableAnalysis() {    
     startAndStopManual.innerText = startText;
-    statusMsg.innerHTML = "";
+    $('#statusMsg').html("");
     //startAndStopManual.style.backgroundColor = "#c3d6be";
     canvasClick = "";
     startAndStopManual.setAttribute('disabled', '');
@@ -749,7 +742,7 @@
   }
   
   function getFPS() {
-    statusMsg.innerHTML = "Calculating FPS... <i class='fa fa-spinner fa-spin fa-fw'></i>"
+    $('#statusMsg').html( "Calculating FPS... <i class='fa fa-spinner fa-spin fa-fw'></i>" );
     
     MediaInfo({ format: 'object' }, (mediainfo) => {
       const file = $('#videoInput').prop('files')[0];
@@ -778,13 +771,13 @@
                 fpsInput.value = track.FrameRate;
                 fpsInput.onchange();
                 $("#showMediaInfo").removeAttr("disabled");
-                statusMsg.innerHTML = "";
+                $('#statusMsg').html( "" );
               }
             } );
         })
           .catch((error) => {  
             alert("An error occured. Please set FPS manually.");
-            statusMsg.innerHTML = "";
+            $('#statusMsg').html( "" );
         })
       }
     })
@@ -895,7 +888,7 @@
     canvasClick = "setOrigin";
      
     // set statusMsg
-    statusMsg.innerHTML = "Click on the (new) origin...";
+    $('#statusMsg').html( "Click on the (new) origin..." );
         
     drawAxes();
   });
@@ -928,7 +921,7 @@
     canvas.clear();
     drawAxes();
     setTimeout( function() {     
-      statusMsg.innerHTML = "";
+      $('#statusMsg').html( "" );
       gotoFrame( frameNumber); 
     }, 500); 
   }
@@ -943,7 +936,7 @@
     } 
     canvasClick = "setScale1";
     // set statusMsg
-    statusMsg.innerHTML = "Click on the first point";
+    $('#statusMsg').html( "Click on the first point" );
   });
   
   // Set the scale (1st point)
@@ -956,7 +949,7 @@
     
     // Reset statusMsg and canvas click event
     canvasClick = "setScale2";
-    statusMsg.innerHTML = "Click on the second point";    
+    $('#statusMsg').html( "Click on the second point" );    
   }
 
   // Set the scale (2nd point)
@@ -976,7 +969,7 @@
     
     // Reset statusMsg and canvas click event
     canvasClick = "";
-    statusMsg.innerHTML = "";
+    $('#statusMsg').html( "" );
     
   }
   
@@ -985,12 +978,12 @@
 
     if( startAndStopManual.innerText === startText ) {
       startAndStopManual.innerText = stopText;
-      statusMsg.innerHTML = "Click on the object";
+      $('#statusMsg').html( "Click on the object" );
       //startAndStopManual.style.backgroundColor = "darkred";
       canvasClick = "addRawDataPoint";
     } else {
       startAndStopManual.innerText = startText;
-      statusMsg.innerHTML = "";
+      $('#statusMsg').html( "" );
       canvasClick = "";
     }
     startAndStopManual.classList.toggle('button-on');
@@ -1147,7 +1140,7 @@
         e.target.removeEventListener(e.type, arguments.callee); // remove the handler or else it will draw another frame on the same canvas, when the next seek happens
         //canvasContext.drawImage(video,0,0, width, height );
         //drawVideo();
-        frameCounter.innerHTML = frameNumber + " / " + $("#slider").attr("max");
+        $('#frameNumber').html( frameNumber + " / " + $("#slider").attr("max") );
         $("#slider").val( frameNumber );
       });
       return true;
