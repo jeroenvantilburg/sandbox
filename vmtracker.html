@@ -11,50 +11,36 @@
   <base target="_blank">
 </head>  
 <body>
-  <div class="header">
-  
-        <div class="titlebar"><i class="fa fa-film"></i> Video Motion Tracker</div>
-
-        <div class="menubar">
-          <div class="dropdown">
-            <button class="dropbtn"><i class="fa fa-bars"></i></button>
-            <div class="dropdown-content">
-              <a id="showAbout"><i class="fa fa-vcard"></i> About</a>
-              <a id="showSettings"><i class="fa fa-cogs"></i> Settings</a>
-              <a id="videoImport" disabled><i class="fa fa-upload"></i> Upload new video</a>
-              <input id="videoInput" type="file" accept="video/*,.mkv" hidden/>
-              <a id="csvExport"><i class="fa fa-download"></i> Export csv-file</a>
-              <a id="csvImport"><i class="fa fa-upload"></i> Import csv-file</a>
-              <input id="csvInput" type="file" accept="text/plain,text/csv,.csv,.tsv" hidden>
-              <a id="deleteData"><i class="fa fa-trash-o"></i> Delete data</a>
-              <a id="showHelp"><i class="fa fa-question-circle-o"></i> Help</a>
-            </div>
-          </div>
+  <div class="header">    
+    <div class="titlebar"><i class="fa fa-film"></i> Video Motion Tracker</div>    
+    <div class="menubar">    
+      <div class="dropdown"> 
+        <button class="dropbtn"><i class="fa fa-bars"></i></button>    
+        <div class="dropdown-content">  
+          <a id="showAbout"><i class="fa fa-vcard"></i> About</a>
+          <a id="showSettings"><i class="fa fa-cogs"></i> Settings</a>
+          <a id="videoImport" disabled><i class="fa fa-upload"></i> Upload new video</a>
+          <input id="videoInput" type="file" accept="video/*,.mkv" hidden/>
+          <a id="csvExport"><i class="fa fa-download"></i> Export csv-file</a>
+          <a id="csvImport"><i class="fa fa-upload"></i> Import csv-file</a>
+          <input id="csvInput" type="file" accept="text/plain,text/csv,.csv,.tsv" hidden>
+          <a id="deleteData"><i class="fa fa-trash-o"></i> Delete data</a>
+          <a id="showHelp"><i class="fa fa-question-circle-o"></i> Help</a>
         </div>
       </div>
-    
+    </div>
   </div>
-
+  
   <div class="body">
     <div class="main">  
-	  	<div class="page-header">
-
-        <!--button id="videoImport" disabled><i class="fa fa-upload"></i> Upload video</button>
-        <input id="videoInput" type="file" accept="video/*,.mkv" hidden/>
-        &nbsp;&nbsp;<nobr id="statusMsg"></nobr-->
-        <!--button id="showAbout"><i class="fa fa-vcard"></i> About</button>
-        <button id="showHelp"><i class="fa fa-info"></i> Help</button>
-        <button id="showSettings"><i class="fa fa-cogs"></i> Settings</button-->
-               
+	  	<div class="page-header">               
         <div class="center">
           <button id="startAndStopAuto" disabled hidden>Automatic</button>
           <button id="startAndStopManual" class="main-button button-on" disabled>Start analysis</button>
         </div>
-
         <div class="center">
            <nobr id="statusMsg"></nobr>
         </div>
-
         <div class="center">
           <button id="prev" disabled><i class="fa fa-step-backward"></i></button>
           <button id="play" disabled><i class="fa fa-play"></i></button>
@@ -66,70 +52,17 @@
         </div>
       </div>
       <div class="content">
-        <!--video id="video" hidden muted></video-->       
-        
-        <!--video id="video" autoplay playsinline muted style="display:none"></video>
-        <canvas style="border:1px solid #ccc" id="canvasOutput"></canvas-->
-        
-        <!-- Check if this works on iphone -->
         <div class="container" style="position:relative">
           <video id="video" autoplay playsinline muted style="display:block"></video>
           <canvas style="position:absolute;top:0;border:0px solid #ccc" id="canvasOutput"></canvas>
         </div>    
       </div>
 		</div>
+    
     <div class="sidebar">
       <div class="side-header">
-        Data
-        <!--div class="titlebar">Data</div>
-        <div class="menubar">
-          <div class="dropdown">
-            <button class="dropbtn"><i class="fa fa-bars"></i></button>
-            <div class="dropdown-content">
-              <a id="showAbout"><i class="fa fa-vcard"></i> About</a>
-              <a id="showSettings"><i class="fa fa-cogs"></i> Settings</a>
-              <a id="videoImport" disabled><i class="fa fa-upload"></i> Upload new video</a>
-              <input id="videoInput" type="file" accept="video/*,.mkv" hidden/>
-              <a id="csvExport"><i class="fa fa-download"></i> Export csv-file</a>
-              <a id="csvImport"><i class="fa fa-upload"></i> Import csv-file</a>
-              <input id="csvInput" type="file" hidden>
-              <a id="deleteData"><i class="fa fa-trash-o"></i> Delete data</a>
-              <a id="showHelp"><i class="fa fa-question-circle-o"></i> Help</a>
-            </div>
-          </div>
-        </div-->
-        
+        Data        
       </div>
-
-
-
-
-    <!--div class="w3-bar w3-dark-gray w3-large">
-
-    <div class="w3-bar-item w3-text-white w3-dark-gray">   
-      <b>Data</b>
-      </div>
-  <div class="w3-dropdown-hover w3-right">
-    <button class="w3-button w3-text-white w3-dark-gray">
-      <i class="fa fa-bars"></i>
-    </button>
-    <div class="w3-dropdown-content w3-card-4 w3-bar-block w3-small" style="right:0">
-      <a class="w3-bar-item w3-button" id="csvExport"><i class="fa fa-download"></i> Export csv</a>
-      <a class="w3-bar-item w3-button" id="csvImport"><i class="fa fa-upload"></i> Import csv</a>
-      <input id="csvInput" type="file" hidden>
-      <a class="w3-bar-item w3-button" id="deleteData"><i class="fa fa-trash-o"></i> Delete data</a>
-    </div>
-  </div>   
-  </div-->   
-
-
-        
-        <!--Data          <i class="fa fa-bars"></i-->
-      <!--/div-->
-      <!--button id="csvExport"><i class="fa fa-download"></i> Export data</button>
-      <button id="csvImport"><i class="fa fa-upload"></i> Import data</button>
-      <input id="csvInput" type="file" hidden>
-      <button id="deleteData"><i class="fa fa-trash-o"></i></button-->
       <div class="side-main">
         <table style="border-spacing: 0;">
           <tr>
@@ -138,7 +71,7 @@
             <td><button id="showMediaInfo" disabled>Media info</button></td>
           </tr>
           <tr>
-           <td>Scale:</td>
+            <td>Scale:</td>
             <td><input id="scaleInput" type="text" style="width:60px"></input> px/m</td>
             <td><button id="scale" disabled>Set scale</button></td>
           </tr>
@@ -183,16 +116,12 @@
       ...
             The velocity is calculated from two positions. The corresponding time is the average of these points. 
       The velocity fields have their own time stamps, which may not overlap with the time stamps from the positions. This may cause empty cells in the CSV file.
-
-
-
     </div>
   </div>
 
   <div id="settingsModal" class="modal">
     <div class="modal-content"> <span class="close">&times;</span>
       <h2>Settings</h2>
-      
       <table>
         <tr><th colspan="3">Analysis</th></tr>
         <tr>
@@ -206,58 +135,58 @@
           <td>Number of frames to skip during manual analysis.</td>
         </tr>
       </table>
-
-
-    <table>
-      <tr><th colspan="3">Derived data</th></tr>
-    <tr><td>Display velocity:</td><td>
-    <input type="checkbox" id="showVelocity"></td>
-      <td>Show or hide the velocity data.</td></tr>
-    <tr><td>Display acceleration:</td><td>
-    <input type="checkbox" id="showAcceleration"></td>
-      <td>Show or hide the acceleration data.</td></tr>
-
-      <tr><td>Integration time:</td><td>
-      <input id="integrationTimeInput" type="number" min="1" step="1" max="10">
-      </input>
-      </td><td>Number of frames used to calculate velocity/acceleration. A larger integration time results in smoother velocity and acceleration graphs, but a decreased sensitivity to changes in the velocity/acceleration.</td></tr>
-      </tr>
-
-    </table>
-
-    <br/>
-
-
-
-    <table>
-      <tr><th colspan="3">Export CSV files</th></tr>
-      <tr><td>Decimal separator:</td><td>
-    <select id="decimalSeparatorInput" name="decimalSep">
-      <option value=".">.</option>
-      <option value=",">,</option>
-      </select></td><td>Numbers are written as 1<decimalSep></decimalSep>23</td></tr><tr><td>
-    <!--Decimal separator:<br/>
-    <label><input type="radio" name="decimalSeparatorInput" value=".">.</label><br/>   
-    <label><input type="radio" name="decimalSeparatorInput" value=",">,</label>   
-<br/-->
-      Delimiter:</td><td>
-    <select id="delimiterInput" name="delimiter">
-      <option value=",">,</option>
-      <option value="tab">tab</option>
-      <option value=";">;</option>
-      <option value=" ">space</option>
-      </select></td><td>Fields are separated as <pre>"Field1"<delimiter></delimiter>"Field2"</pre></td></tr>
-
-    <tr><td>Avoid empty cells:</td><td>
-    <input type="checkbox" id="avoidEmptyCells"></td>
-      <td>Adjust the velocity time stamps by at most half a frame. This avoids empty cells, but slightly reduces the accuracy of the velocity time stamp.</td></tr>
-</table>
-
-    
+      <br/>
+      <table>
+        <tr><th colspan="3">Derived data</th></tr>
+        <tr>
+          <td>Display velocity:</td>
+          <td><input type="checkbox" id="showVelocity"></td>
+          <td>Show or hide the velocity data.</td>
+        </tr>
+        <tr>
+          <td>Display acceleration:</td>
+          <td><input type="checkbox" id="showAcceleration"></td>
+          <td>Show or hide the acceleration data.</td>
+        </tr>
+        <tr>
+          <td>Integration time:</td>
+          <td><input id="integrationTimeInput" type="number" min="1" step="1" max="10"></input></td>
+          <td>Number of frames used to calculate velocity/acceleration. A larger integration time results in smoother velocity and acceleration graphs, but a decreased sensitivity to changes in the velocity/acceleration.</td>
+        </tr>
+      </table>
+      <br/>
+      <table>
+        <tr><th colspan="3">Export CSV files</th></tr>
+        <tr>
+          <td>Decimal separator:</td>
+          <td>
+            <select id="decimalSeparatorInput" name="decimalSep">
+              <option value=".">.</option>
+              <option value=",">,</option> 
+            </select>
+          </td>
+          <td>Numbers are written as 1<decimalSep></decimalSep>23</td>
+        </tr>
+        <tr>
+          <td>Delimiter:</td>
+          <td>
+            <select id="delimiterInput" name="delimiter">
+              <option value=",">,</option>
+              <option value="tab">tab</option>
+              <option value=";">;</option>
+              <option value=" ">space</option>
+            </select>
+          </td>
+          <td>Fields are separated as <pre>"Field1"<delimiter></delimiter>"Field2"</pre></td>
+        </tr>
+        <tr>
+          <td>Avoid empty cells:</td>
+          <td><input type="checkbox" id="avoidEmptyCells"></td>
+          <td>Adjust the velocity time stamps by at most half a frame. This avoids empty cells, but slightly reduces the accuracy of the velocity time stamp.</td>
+        </tr>
+      </table>
     </div>
   </div>
-
-
 
   <div id="mediaInfoModal" class="modal">
     <div class="modal-content"> <span class="close">&times;</span>
