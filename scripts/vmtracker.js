@@ -5,54 +5,27 @@
 (function() {
 
 /* ========== GLOBAL SECTION =================
-   Global variables are defined here
+     Global variables are defined here
    =========================================== */
   
-    // HTML elements
-  let video          = document.getElementById('video');
-  let fpsInput       = document.getElementById('fpsInput');
-  let originXInput   = document.getElementById('originXInput');
-  let originYInput   = document.getElementById('originYInput');  
-  let scaleInput     = document.getElementById('scaleInput');  
-
-  //let statusMsg      = document.getElementById("statusMsg");
-  //let videoInput     = document.getElementById('videoInput');
-  //let showMediaInfo  = document.getElementById('showMediaInfo');
-  //let originButton   = document.getElementById('origin');
-  //let scaleButton    = document.getElementById('scale');
-  //let prevButton     = document.getElementById('prev');
-  //let playButton     = document.getElementById('play');
-  //let nextButton     = document.getElementById('next');
-  //let slider         = document.getElementById('slider');
-  //let zoomOut        = document.getElementById('zoomOut');
-  //let zoomIn         = document.getElementById('zoomIn');
-  //let canvasOutput   = document.getElementById('canvasOutput');
-  //let canvasContext  = canvasOutput.getContext('2d');
-  //let frameCounter   = document.getElementById("frameNumber")  
-  let startAndStopAuto = document.getElementById('startAndStopAuto');
+  // HTML elements
+  let video              = document.getElementById('video');
+  let startAndStopAuto   = document.getElementById('startAndStopAuto');
   let startAndStopManual = document.getElementById('startAndStopManual');
   
   let startText = startAndStopManual.innerText;
   let stopText = "Stop analysis";
 
+  // Initialize canvas using Fabric.js
   var canvas = this.__canvas = new fabric.StaticCanvas('canvasOutput');
   fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
   
+  // Define marker style
   let markerPoint = new fabric.Circle({ radius: 3, stroke: 'rgba(200,0,0)', strokeWidth: 1, 
                                         fill: 'rgba(0,0,0,0)' });
-  function highlightMarker( markerP ) {
-    markerP.set({stroke: 'red', strokeWidth: 2});
-  }
-
-  /*canvas.add(
-    new fabric.Rect({ top: 100, left: 100, width: 50, height: 50, fill: '#f55' }),
-    new fabric.Circle({ top: 140, left: 230, radius: 75, fill: 'green' }),
-    new fabric.Triangle({ top: 300, left: 210, width: 100, height: 100, fill: 'blue' })
-  );*/
+  function highlightMarker( markerP ) { markerP.set({stroke: 'red', strokeWidth: 2}); }
 
   // Global video parameters
-  let playing = false;
-  let streaming = false;
   let width = 0;
   let height = 0;
   let frameNumber = 0;
@@ -66,7 +39,7 @@
   let pixelsPerMeter;
   let originX, originY; // in pixels
   
-  /* ========== USER SETTINGS ======================
+/* ========== USER SETTINGS ======================
      These settings can be changed in settings menu
    ================================================= */
 
@@ -176,7 +149,7 @@
     if( canvasWidth ) {
       //canvasOutput.width = canvasWidth;
       canvas.setWidth(canvasWidth);
-      console.log("scaleRatio = "+ scaleRatio);
+      //console.log("scaleRatio = "+ scaleRatio);
       canvas.setZoom(scaleRatio);
     }
     if( canvasHeight ) {
@@ -407,14 +380,11 @@
 
           // Update the header info
           let meta = results.data[0];
-          fpsInput.value = toNumber( meta[fpsStr] );
-          fpsInput.onchange();
-          originXInput.value = toNumber( meta[origXStr] );
-          originYInput.value = toNumber( meta[origYStr] );
-          originXInput.onchange();
-          originYInput.onchange();
-          scaleInput.value = toNumber( meta[scaleStr] );
-          scaleInput.onchange();
+          updateFPS( toNumber( meta[fpsStr] ) );
+          //fpsInput.value = toNumber( meta[fpsStr] );
+          //fpsInput.onchange();          
+          updateOrigin( toNumber( meta[origXStr] ), toNumber( meta[origYStr] ) );
+          updateScale( toNumber( meta[scaleStr] ) );
 
           // Add raw data
           for(let i=1; i<results.data.length; ++i ){
@@ -472,14 +442,13 @@
 
     // Clear raw data and meta data
     rawData = [];
-    fpsInput.value = "";
-    scaleInput.value = "";
-    originXInput.value = "";
-    originYInput.value = "";
     FPS = undefined;
+    updateFPS();
+    //fpsInput.value = "";
     pixelsPerMeter = undefined;
-    originX = undefined;
-    originY = undefined;
+    updateScale();
+    originX = originY = undefined;
+    updateOrigin();
     canvas.clear();
 
     // Disable video control and reset video parameters when selecting new video
@@ -534,23 +503,18 @@
     drawVideo(width, height);
     
     // Set initial origin to left bottom corner
-    originXInput.value = 0;
-    originYInput.value = height;     
-    originXInput.onchange();
-    originYInput.onchange();
+    updateOrigin(0, height);
 
     console.log("Resolution: " + width.toString() + " x " + height.toString() );
     console.log("Duration: " + video.duration );
 
-    // Enable manually setting frame rate
-    //fpsInput.removeAttribute("disabled");
-    
+    // Enable manually setting origin and scale
     $('#origin').removeAttr('disabled');
     $('#scale').removeAttr('disabled');
     
     // Highlight fields that need to be filled
-    scaleInput.style.background = 'pink';
-    fpsInput.style.background = 'pink';
+    $("#scaleInput").css( "background", "pink");
+    $("#fpsInput").css("background", "pink");
 
     // Get the frame rate
     getFPS();
@@ -559,10 +523,10 @@
   
     
   function blurOnEnter(e){ if(e.keyCode===13){ e.target.blur();} }
-  fpsInput.addEventListener("keydown",blurOnEnter);
-  originXInput.addEventListener("keydown",blurOnEnter);
-  originYInput.addEventListener("keydown",blurOnEnter);
-  scaleInput.addEventListener("keydown", blurOnEnter);
+  $("#fpsInput").keydown(blurOnEnter);
+  $("#originXInput").keydown(blurOnEnter);
+  $("#originYInput").keydown(blurOnEnter);
+  $("#scaleInput").keydown(blurOnEnter);
 
 
   function dataCanBeRemoved() {
@@ -571,7 +535,7 @@
   }
   
   // Update the frame rate (fps) when user gives input or when calculated
-  fpsInput.onchange = function() {
+  $("#fpsInput").change( function() {
 
     if( isNumeric(this.value) && toNumber(this.value) > 0 && dataCanBeRemoved() ) {
 
@@ -601,11 +565,16 @@
     } else {
       this.value = FPS || "";
     }
-  }
+  });
 
+  function updateFPS( rate ) {
+    $("#fpsInput").val( rate );
+    $("#fpsInput").change();
+  }
+  
+  
   // Update the origin when user gives input or when calculated
-  originXInput.onchange = function(evt) {
-    
+  $("#originXInput").change( function() {
     if( isNumeric(this.value) ) {
       originX = toNumber( this.value ) ;
       // Update plots
@@ -613,8 +582,8 @@
     } else {
       this.value = (typeof originX !== "undefined" ) ? originX : "";
     }
-  }
-  originYInput.onchange = function() {
+  });
+  $("#originYInput").change( function() {
     if( isNumeric(this.value) ) {
       originY = toNumber( this.value ) ;
       // Update plots
@@ -622,11 +591,10 @@
     } else {
       this.value = (typeof originY !== "undefined" ) ? originY : "";
     }
-  }
+  });
   
   // Update the origin when user gives input or when calculated
-  scaleInput.onchange = function() {
-    
+  $("#scaleInput").change( function() {
     if( isNumeric(this.value) && toNumber(this.value) > 0 ) {
       pixelsPerMeter = toNumber( this.value );   
       this.style.background = '';
@@ -637,12 +605,12 @@
     } else {
       this.value = pixelsPerMeter || "";
     }
-  }
+  });
   
   function tryToEnable() {
     if( video.src !== "" ) {
-      if( fpsInput.value !== "" ) enableVideoControl();
-      if( fpsInput.value !== "" && scaleInput.value !== "" ) enableAnalysis();
+      if( $("#fpsInput").val() !== "" ) enableVideoControl();
+      if( $("#fpsInput").val() !== "" && $("#scaleInput").val() !== "" ) enableAnalysis();
     }
   }
   
@@ -768,8 +736,9 @@
             result.media.track.forEach(track => {
               if( track["@type"] === "Video") {                        
                 // Set the new FPS
-                fpsInput.value = track.FrameRate;
-                fpsInput.onchange();
+                updateFPS( track.FrameRate );
+                //fpsInput.value = track.FrameRate;
+                //fpsInput.onchange();
                 $("#showMediaInfo").removeAttr("disabled");
                 $('#statusMsg').html( "" );
               }
@@ -818,13 +787,15 @@
   });
 
   
-  var playIntervalID=0;
+  let playIntervalID=0;
+  let playing = false;
   $('#play').click(function() {
     $(this).find('.fa-play,.fa-pause').toggleClass('fa-pause').toggleClass('fa-play');
     if ( playing === false ) {
       playing = true;
       let that = this;
-      playIntervalID = window.setInterval( function() { 
+      playIntervalID = window.setInterval( function() {
+        // Go to next frame until the end (when gotoFrame returns false)
         if( gotoFrame(frameNumber+1) == false ) {
           window.clearInterval( playIntervalID );
           playing = false;
@@ -837,26 +808,6 @@
     }
   });
   
-  
-  /*var playIntervalID=0;
-  playButton.addEventListener('click', evt => {
-    if ( playing === false ) {
-      playing = true;
-      //playButton.innerText = 'pause';
-      //this.find('.fa-play').toggleClass('fa-play fa-pause')
-      playIntervalID = window.setInterval( function() { 
-        if( gotoFrame(frameNumber+1) == false ) {
-          window.clearInterval( playIntervalID );
-          playButton.innerText = 'play';
-        } 
-      }, 1000/FPS );
-    } else {
-      playing = false;
-      window.clearInterval( playIntervalID );    
-      //playButton.innerText = 'play';
-    }
-  });*/
-
   $("#slider").change( function() {
     // Go to next frame
     gotoFrame(Math.floor(this.value));
@@ -865,7 +816,6 @@
 
   let canvasClick = "";
   $('#canvasOutput').click( (evt) => {
-    console.log("canvas is clicked="+canvasClick);
     if( canvasClick === "addRawDataPoint" ) {
       addRawDataPoint(evt);
     } else if( canvasClick === "setOrigin" ) {
@@ -895,25 +845,20 @@
   
   // Draw the axis    
   function drawAxes() {
-    let xAxis = new fabric.Line([0,originYInput.value,width,originYInput.value], 
-                                {strokeWidth: 2, stroke: 'blue' });    
-    let yAxis = new fabric.Line( [originXInput.value,0,originXInput.value, height], 
-                                 {strokeWidth: 2, stroke: 'blue' });    
+    let xAxis = new fabric.Line([0,originY,width,originY],  {strokeWidth: 2, stroke: 'blue' });    
+    let yAxis = new fabric.Line( [originX,0,originX, height], {strokeWidth: 2, stroke: 'blue' });    
     canvas.add( xAxis );
     canvas.add( yAxis );
     canvas.renderAll();    
   }
   
-  // update origin
+  // set origin from mouse position
   function setOrigin(evt) {
     // Get mouse position in pixels
     let posPx = getMousePos( evt );
     
     // Update origin
-    originXInput.value = posPx.x;
-    originYInput.value = posPx.y;
-    originXInput.onchange();
-    originYInput.onchange();
+    updateOrigin( posPx.x, posPx.y);
     
     // Reset statusMsg and canvas click event
     canvasClick = "";
@@ -924,6 +869,14 @@
       $('#statusMsg').html( "" );
       gotoFrame( frameNumber); 
     }, 500); 
+  }
+  
+  // update origin
+  function updateOrigin(x,y) {
+    $("#originXInput").val( x );
+    $("#originYInput").val( y );
+    $("#originXInput").change();
+    $("#originYInput").change();
   }
   
   // Set scale button
@@ -962,16 +915,21 @@
     // Update scale
     scale2 = {x: posPx.x, y: posPx.y};
     
-        // Update origin
-    scaleInput.value = Math.sqrt( (scale2.x-scale1.x)**2 + (scale2.y-scale1.y)**2 ) / distanceInMeter;
-    scaleInput.onchange();
-    //pixelsPerMeter = Math.sqrt( (scale2.x-scale1.x)**2 + (scale2.y-scale1.y)**2 ) / distanceInMeter;
+    // Update scale
+    updateScale( Math.sqrt((scale2.x-scale1.x)**2 + (scale2.y-scale1.y)**2) / distanceInMeter );
     
     // Reset statusMsg and canvas click event
     canvasClick = "";
     $('#statusMsg').html( "" );
     
   }
+  
+  // update scale
+  function updateScale(scale) {
+    $("#scaleInput").val( scale );
+    $("#scaleInput").change();
+  }
+
   
   // Manual analysis
   startAndStopManual.addEventListener('click', evt => {
@@ -1165,8 +1123,6 @@
     let rect = canvas.lowerCanvasEl.getBoundingClientRect();
     let scaleX = canvas.width / width;    // relationship bitmap vs. element for X
     let scaleY = canvas.height / height;  // relationship bitmap vs. element for Y
-
-    console.log("scaleX= "+ scaleX+ " scale="+canvas.width/width );
     
     return {
       x: (evt.clientX - rect.left)/scaleX,
@@ -1183,6 +1139,8 @@
     };
   }
 
+  
+  let streaming = false;
   startAndStopAuto.addEventListener('click', () => {
     if (!streaming) {
         //utils.clearError();
@@ -1331,7 +1289,6 @@ function onVideoStarted() {
 
   Chart.defaults.global.responsive = false;
   Chart.defaults.global.defaultFontSize = 10;
-
   
   let posCtx = document.getElementById('positionChart').getContext('2d');
   let positionChart = new Chart(posCtx, {
