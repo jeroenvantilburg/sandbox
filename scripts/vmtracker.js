@@ -10,7 +10,7 @@
   
   // HTML elements
   let video              = document.getElementById('video');
-  let startAndStopAuto   = document.getElementById('startAndStopAuto');
+  //let startAndStopAuto   = document.getElementById('startAndStopAuto');
   let startAndStopManual = document.getElementById('startAndStopManual');
   
   let startText = startAndStopManual.innerText;
@@ -29,20 +29,25 @@
   let width = 0;
   let height = 0;
   let frameNumber = 0;
-  let FPS;
   let t0 = 0.0;
-  let rawData = [];
-  let videoName = "";
-
-  // ...  
-  let scale1, scale2;
+  let FPS;
   let pixelsPerMeter;
   let originX, originY; // in pixels
-  
-/* ========== USER SETTINGS ======================
-     These settings can be changed in settings menu
-   ================================================= */
+  let scale1, scale2;   // in pixels
 
+  // The raw data (all derived data is calculated on the fly)
+  let rawData = [];
+  
+  /* ========== USER SETTINGS ======================
+     These settings can be changed in settings menu
+     ================================================= */
+
+  let automaticAnalysis = false;
+  $('#automaticAnalysis').prop('checked',automaticAnalysis);
+  $('#automaticAnalysis').on('change', function(e) {
+    automaticAnalysis = $('#automaticAnalysis').is(':checked');
+  });  
+  
   let drawAllPoints = true;
   $('#drawAllPoints').prop('checked',drawAllPoints);
   $('#drawAllPoints').on('change', function(e) {
@@ -337,13 +342,16 @@
                                       delimiter : delimiter === "tab" ? "\t" : delimiter } );
     console.log(csv);
 
+
+    
+    let videoFile = $('#videoInput').prop('files')[0];
+    let videoName = (typeof videoFile === "undefined" ) ? "data" : videoFile.name;
     let filename = prompt("Save as...", videoName.substr(0, videoName.lastIndexOf('.'))+".csv");
     if (filename != null && filename != "") {
       download( filename, csv);
     }
 
   });
-
   
   function isNumeric(str) {
     if (typeof str != "string") return false; // we only process strings!  
@@ -458,10 +466,8 @@
     // Get the file
     let URL = window.URL || window.webkitURL;
     let file = this.files[0];
-    console.log("video src=" + video.src);
     video.src = URL.createObjectURL(file);
     console.log("video src=" + video.src);
-    videoName = file.name;
   });
   
   // video playback failed - show a message saying why
@@ -648,7 +654,7 @@
     // Automatic analysis only when openCV is ready
     //document.getElementById('opencv').onload= () => onOpenCvReady();
     //function onOpenCvReady() {
-      startAndStopAuto.removeAttribute('disabled');
+      //startAndStopAuto.removeAttribute('disabled');
     //}
   }
 
@@ -658,7 +664,7 @@
     //startAndStopManual.style.backgroundColor = "#c3d6be";
     canvasClick = "";
     startAndStopManual.setAttribute('disabled', '');
-    startAndStopAuto.setAttribute('disabled', '');
+    //startAndStopAuto.setAttribute('disabled', '');
 
   }
 
@@ -932,14 +938,20 @@
 
   
   // Manual analysis
+  let analysisStarted = false;
   startAndStopManual.addEventListener('click', evt => {
-
-    if( startAndStopManual.innerText === startText ) {
+    if( analysisStarted === false ) {
+      analysisStarted = true;
       startAndStopManual.innerText = stopText;
-      $('#statusMsg').html( "Click on the object" );
-      //startAndStopManual.style.backgroundColor = "darkred";
-      canvasClick = "addRawDataPoint";
+      if( automaticAnalysis ) {
+        canvasClick = "";
+        onVideoStarted();
+      } else {
+        $('#statusMsg').html( "Click on the object" );
+        canvasClick = "addRawDataPoint";
+      }
     } else {
+      analysisStarted = false;
       startAndStopManual.innerText = startText;
       $('#statusMsg').html( "" );
       canvasClick = "";
@@ -1140,7 +1152,7 @@
   }
 
   
-  let streaming = false;
+  /*let streaming = false;
   startAndStopAuto.addEventListener('click', () => {
     if (!streaming) {
         //utils.clearError();
@@ -1160,27 +1172,45 @@
     //canvasContext.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
     startAndStopAuto.innerText = 'Automatic';
   }
-  
+  */
   
 // Automatic analysis
 function onVideoStarted() {
-  streaming = true;
-  startAndStopAuto.innerText = 'Stop';
+  //streaming = true;
+  //startAndStopAuto.innerText = 'Stop';
+  
+  // TODO: check if video was canvas before
+  
   video.height = video.width * (video.videoHeight / 
                                           video.videoWidth);
   //utils.executeCode('codeEditor');
   
   let video = document.getElementById('video');
   let cap = new cv.VideoCapture(video);
+  
+  console.log("tot hier 1");
+  console.log(cap);
+
 
   // take first frame of the video
   let frame = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+  console.log(frame);
+
+  console.log("tot hier 1.2");
+
   cap.read(frame);
+
+    console.log("tot hier 2");
+
 
   // hardcode the initial location of window
   //let trackWindow = new cv.Rect(150, 60, 63, 125);
   //let x1 = 200, y1=0, x2=250, y2=60;
-  let trackWindow = new cv.Rect(200, 0, 80, 50);
+  //let trackWindow = new cv.Rect(200, 0, 80, 50);
+  let trackWindow = new cv.Rect(scale1.x, scale1.y, scale2.x-scale1.x, scale2.y-scale2.y);
+
+  console.log("tot hier 3");
+
 
   // set up the ROI for tracking
   let roi = frame.roi(trackWindow);
@@ -1213,15 +1243,18 @@ function onVideoStarted() {
   let dst = new cv.Mat();
   let trackBox = null;
 
+    console.log("tot hier 4");
+
+
   function processVideo() {
     try {
-        if (!streaming) {
+        if (!analysisStarted) {
             // clean and stop.
             frame.delete(); dst.delete(); hsvVec.delete(); roiHist.delete(); 
           hsv.delete();
             return;
         }
-        let begin = Date.now();
+        //let begin = Date.now();
 
         // start processing.
         cap.read(frame);
@@ -1257,11 +1290,14 @@ function onVideoStarted() {
         cv.imshow('canvasOutput', frame);
 
         console.log(video.currentTime);
-        video.currentTime = Math.min(video.duration, 
-                                          video.currentTime + 1/FPS);
+
+        gotoFrame(frameNumber+framesToSkip);
+        
+        //video.currentTime = Math.min(video.duration, 
+        //                                  video.currentTime + 1/FPS);
       
         // schedule the next one.
-        let delay = 1000/FPS - (Date.now() - begin);
+        //let delay = 1000/FPS - (Date.now() - begin);
         setTimeout(processVideo, 10 );//delay);
     } catch (err) {
         //utils.printError(err);
