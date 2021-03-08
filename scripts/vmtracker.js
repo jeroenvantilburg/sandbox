@@ -148,26 +148,42 @@
   });
   
   $("#zoomOut").click( () => {
-    //console.log("zoom: " + canvas.width / width );
+    console.log("zoom: " + canvas.width / width );
     if( canvas.width > 200 ) { // minimum 200 px should be small enough
-      drawVideo(0.5*canvas.width, 0.5*canvas.height);
+      //drawVideo(0.5*canvas.width, 0.5*canvas.height);
+      setVideoZoom( 0.5*canvas.width / video.videoWidth );
     }
 
   });
 
   $("#zoomIn").click( () => {
-    //console.log("zoom: " + canvas.width / width );
+    console.log("zoom: " + canvas.width / width );
     if( canvas.width < 8 * width ) { // Maximum zoom x8
-      drawVideo(2*canvas.width, 2*canvas.height)
+      //drawVideo(2*canvas.width, 2*canvas.height);
+      setVideoZoom( 2*canvas.width / video.videoWidth )
     }
 
   });
 
+  function setVideoZoom( scaleRatio ) {
+    console.log("scale ratio = " + scaleRatio );
+    canvas.setDimensions({ width: video.videoWidth * scaleRatio, 
+                           height: video.videoHeight * scaleRatio })
+    canvas.setZoom( scaleRatio );
+    canvas.renderAll();
+
+    video.width = video.videoWidth * scaleRatio ;
+    video.height = video.videoHeight * scaleRatio; // TODO: is this needed?
+    
+  }
+  
+      
+  // TODO: remove this obsolete function  
   function drawVideo(canvasWidth, canvasHeight) {
     // TODO: use canvas.setDimensions({ width: canvas.getWidth() * scaleRatio, height: canvas.getHeight() * scaleRatio })
     
     
-    let scaleRatio = canvasWidth / width;
+    let scaleRatio = canvasWidth / video.videoWidth;
     if( canvasWidth ) {
       //canvasOutput.width = canvasWidth;
       canvas.setWidth(canvasWidth);
@@ -499,12 +515,15 @@
     // Get the dimensions of the video and prepare the canvas
     width = video.videoWidth;
     height = video.videoHeight;
-    drawVideo(width, height);
+    setVideoZoom(1.0);
+    //canvas.setDimensions({ width: video.videoWidth, height: video.videoHeight });
+    //video.width = video.videoWidth;
+    //drawVideo(width, height);
     
     // Set initial origin to left bottom corner
-    updateOrigin(0, height);
+    updateOrigin(0, video.videoHeight);
 
-    console.log("Resolution: " + width.toString() + " x " + height.toString() );
+    console.log("Resolution: " + video.videoWidth + " x " + video.videoHeight );
     console.log("Duration: " + video.duration );
 
     // Enable manually setting origin and scale
@@ -1163,11 +1182,10 @@
     
   // Automatic analysis
   function onVideoStarted() {
-    
-    // TODO: check if videoHeight/videoWidth can be used to see if video is turned 90 degrees
-    console.log(video);  
-    video.height = video.width * (video.videoHeight / 
-                                          video.videoWidth);
+        
+    // Somehow this line is needed to set the right dimensions
+    setVideoZoom(1.0);
+    //video.height = video.width * (video.videoHeight / video.videoWidth);
   
     let cap = new cv.VideoCapture(video);
   
