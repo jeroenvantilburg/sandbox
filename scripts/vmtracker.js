@@ -210,6 +210,7 @@
   $("#deleteData").click( () => { 
     if( dataCanBeRemoved () ) {
       rawData = [];
+      canvas.clear();
       // Update plots
       updatePlots();
     }
@@ -945,6 +946,8 @@
       startAndStopManual.innerText = stopText;
       if( automaticAnalysis ) {
         canvasClick = "";
+        //console.log("call onVideoStarted()")
+        //console.log(video);
         onVideoStarted();
       } else {
         $('#statusMsg').html( "Click on the object" );
@@ -961,6 +964,7 @@
 
   });
 
+  
   function addRawDataPoint(evt) {
     // Get mouse position in pixels
     let posPx = getMousePos( evt );
@@ -1174,42 +1178,35 @@
   }
   */
   
-// Automatic analysis
-function onVideoStarted() {
+
+  // Automatic analysis
+  function onVideoStarted() {
   //streaming = true;
   //startAndStopAuto.innerText = 'Stop';
   
-  // TODO: check if video was canvas before
-  
+  // TODO: check if videoHeight/videoWidth can be used to see if video is turned 90 degrees
+  console.log(video);  
   video.height = video.width * (video.videoHeight / 
                                           video.videoWidth);
   //utils.executeCode('codeEditor');
   
-  let video = document.getElementById('video');
+  //let video = document.getElementById('video');
   let cap = new cv.VideoCapture(video);
   
-  console.log("tot hier 1");
-  console.log(cap);
-
-
   // take first frame of the video
   let frame = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-  console.log(frame);
-
-  console.log("tot hier 1.2");
-
   cap.read(frame);
-
-    console.log("tot hier 2");
-
 
   // hardcode the initial location of window
   //let trackWindow = new cv.Rect(150, 60, 63, 125);
   //let x1 = 200, y1=0, x2=250, y2=60;
   //let trackWindow = new cv.Rect(200, 0, 80, 50);
-  let trackWindow = new cv.Rect(scale1.x, scale1.y, scale2.x-scale1.x, scale2.y-scale2.y);
+  console.log(scale1);
+  console.log(scale2);
+  let trackWindow = new cv.Rect(scale1.x, scale1.y, scale2.x-scale1.x, scale2.y-scale1.y);
 
-  console.log("tot hier 3");
+  console.log("TrackWindow");
+  console.log(trackWindow);
 
 
   // set up the ROI for tracking
@@ -1245,6 +1242,21 @@ function onVideoStarted() {
 
     console.log("tot hier 4");
 
+   /*let xPos2 = trackWindow.x+0.5*trackWindow.width;
+   let yPos2 = trackWindow.y+0.5*trackWindow.height;
+    
+
+  let rect = new fabric.Rect({ left: xPos2, top: yPos2, width: trackWindow.width, 
+                              height: trackWindow.height,
+                              fill: 'rgba(0,0,0,0)', stroke: 'red', strokeWidth: 2 });  
+
+    */
+  /*let rect = new fabric.Rect({left: 0.5*(scale1.x+scale2.x), top: 0.5*(scale1.y+scale2.y), 
+                              height: scale2.y-scale1.y , width: scale2.x-scale1.x, 
+                              fill: 'rgba(0,0,0,0)', stroke: 'red', strokeWidth: 2 });  */
+  //canvas.add(rect);
+
+
 
   function processVideo() {
     try {
@@ -1252,6 +1264,7 @@ function onVideoStarted() {
             // clean and stop.
             frame.delete(); dst.delete(); hsvVec.delete(); roiHist.delete(); 
           hsv.delete();
+            canvas.remove(rect);
             return;
         }
         //let begin = Date.now();
@@ -1263,10 +1276,20 @@ function onVideoStarted() {
         cv.calcBackProject(hsvVec, [0], roiHist, dst, [0, 180], 1);
 
         // apply camshift to get the new location
-        /*[trackBox, trackWindow] = cv.CamShift(dst, trackWindow, termCrit);
-            
+        [trackBox, trackWindow] = cv.CamShift(dst, trackWindow, termCrit);
+         
+        console.log(trackBox);
+      
+      let xPos = trackBox.center.x;
+      let yPos = trackBox.center.y;
+      let xSize = trackBox.size.width;
+      let ySize = trackBox.size.height;
+      let angle = trackBox.angle;
+
+
+      
         // Draw it on image
-        let pts = cv.rotatedRectPoints(trackBox);
+        /*let pts = cv.rotatedRectPoints(trackBox);
         //let trackWindow = new cv.Rect(150, 60, 63, 125);
         //let x1 = 200, y1=0, x2=250, y2=60;
         //pts = [{x: x1, y: y1}, {x: x2, y: y1}, {x: x2, y: y2}, {x: x1, y: y2}]
@@ -1280,25 +1303,71 @@ function onVideoStarted() {
         */
 
         // apply meanshift instead
-        [, trackWindow] = cv.meanShift(dst, trackWindow, termCrit);
+        /*[, trackWindow] = cv.meanShift(dst, trackWindow, termCrit);
+        let xPos = trackWindow.x+0.5*trackWindow.width;
+        let yPos = trackWindow.y+0.5*trackWindow.height;
+        let xSize = trackWindow.width;
+        let ySize = trackWindow.height;
+        let angle = 0;
+        */
 
         // Draw it on image
-        let [x, y, w, h] = [trackWindow.x, trackWindow.y, trackWindow.width, 
+        /*let [x, y, w, h] = [trackWindow.x, trackWindow.y, trackWindow.width, 
                             trackWindow.height];
         cv.rectangle(frame, new cv.Point(x, y), new cv.Point(x+w, y+h), 
                      [255, 0, 0, 255], 2);
         cv.imshow('canvasOutput', frame);
+        */
+      
+      
+      
+      
+     let rawDataPoint = {t: frameNumber, x: xPos, y: yPos};
+     addRawData( rawDataPoint );
+    
+      
+      
+    // Update plots
+    updatePlots();
+    
+      //rect.set({left: xPos, top: yPos});//, width: trackWindow.width, height: trackWindow.height });
+      //rect.setCoords();
+      
+        let rect = new fabric.Rect({ left: xPos, top: yPos, width: xSize, height: ySize,
+                                     angle: angle,
+                              fill: 'rgba(0,0,0,0)', stroke: 'red', strokeWidth: 2 });  
+  canvas.add(rect);
+
+      console.log(xPos + ", " + yPos + ", " + trackWindow.width + ", "+ trackWindow.height);
+      
+    let markerP = fabric.util.object.clone( markerPoint ) ;
+    markerP.set({left: xPos, top: yPos});
+    highlightMarker( markerP );
+    canvas.add( markerP );
+      canvas.requestRenderAll();
 
         console.log(video.currentTime);
+      setTimeout( function() {
+        if( gotoFrame(frameNumber+framesToSkip) === false ) {
+          startAndStopManual.click();
+        }
+        video.addEventListener("seeked", function(e) {
+          e.target.removeEventListener(e.type, arguments.callee); 
+          processVideo();
+        });
+        //setTimeout(processVideo, 50 );//delay);
+      }, 200 );
 
-        gotoFrame(frameNumber+framesToSkip);
+        /*if( gotoFrame(frameNumber+framesToSkip) === false ) {
+          startAndStopManual.click();
+        }*/
         
         //video.currentTime = Math.min(video.duration, 
         //                                  video.currentTime + 1/FPS);
       
         // schedule the next one.
         //let delay = 1000/FPS - (Date.now() - begin);
-        setTimeout(processVideo, 10 );//delay);
+        //setTimeout(processVideo, 200 );//delay);
     } catch (err) {
         //utils.printError(err);
     }
