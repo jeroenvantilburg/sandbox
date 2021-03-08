@@ -4,13 +4,12 @@
 // to avoid cluttering the global variables
 (function() {
 
-/* ========== GLOBAL SECTION =================
-     Global variables are defined here
-   =========================================== */
+  /* ========== GLOBAL SECTION =================
+       Global variables are defined here
+     =========================================== */
   
   // HTML elements
   let video              = document.getElementById('video');
-  //let startAndStopAuto   = document.getElementById('startAndStopAuto');
   let startAndStopManual = document.getElementById('startAndStopManual');
   
   let startText = startAndStopManual.innerText;
@@ -34,6 +33,8 @@
   let pixelsPerMeter;
   let originX, originY; // in pixels
   let scale1, scale2;   // in pixels
+  
+  let box1, box2;
 
   // The raw data (all derived data is calculated on the fly)
   let rawData = [];
@@ -64,6 +65,12 @@
     } else {
       this.value = framesToSkip || "";      
     }
+  });
+  
+  let allowRotations = false;
+  $('#allowRotations').prop('checked', allowRotations);
+  $('#allowRotations').on('change', function(e) {
+    allowRotations = $('#allowRotations').is(':checked');
   });
   
   let integrationTime = 2;
@@ -112,34 +119,44 @@
   $('#avoidEmptyCells').on('change', function(e) {
     avoidEmptyCells = $('#avoidEmptyCells').is(':checked');
   });
-
   
   /*$('input[name=decimalSeparatorInput][value="' + decimalSeparator +'"]').prop('checked',true);
   $('input[name=decimalSeparatorInput]').on('change', function(e) {
     decimalSeparator = document.querySelector('input[name="decimalSeparatorInput"]:checked').value;
   });*/
-  
 
-  //zoomOut.addEventListener('click', () => {
+  
+  function toNumber(string){
+    return parseFloat( string.replace(',','.') );
+  }
+
+  function isNumeric(str) {
+    if (typeof str != "string") return false; // we only process strings!  
+    let string = str.replace(',','.')
+    return !isNaN(string) && // use type coercion to parse the _entirety_ of the string
+           !isNaN(parseFloat(string)) // ...and ensure strings of whitespace fail
+  }
+
+  
+  $("#deleteData").click( () => { 
+    if( dataCanBeRemoved () ) {
+      rawData = [];
+      canvas.clear();
+      // Update plots
+      updatePlots();
+    }
+  });
+  
   $("#zoomOut").click( () => {
-    /*console.log("zoom: " + canvasOutput.width / width );
-    if( canvasOutput.width > 200 ) { // minimum 200 px should be small enough
-      drawVideo(0.5*canvasOutput.width, 0.5*canvasOutput.height);
-    }*/
-    console.log("zoom: " + canvas.width / width );
+    //console.log("zoom: " + canvas.width / width );
     if( canvas.width > 200 ) { // minimum 200 px should be small enough
       drawVideo(0.5*canvas.width, 0.5*canvas.height);
     }
 
   });
 
-  //zoomIn.addEventListener('click', () => {
   $("#zoomIn").click( () => {
-    /*console.log("zoom: " + canvasOutput.width / width );
-    if( canvasOutput.width < 8 * width ) { // Maximum zoom x8
-      drawVideo(2*canvasOutput.width, 2*canvasOutput.height)
-    }*/
-    console.log("zoom: " + canvas.width / width );
+    //console.log("zoom: " + canvas.width / width );
     if( canvas.width < 8 * width ) { // Maximum zoom x8
       drawVideo(2*canvas.width, 2*canvas.height)
     }
@@ -170,6 +187,10 @@
   }
   
 
+  /* ============= CSV SECTION =================
+       Import and export a csv file
+     =========================================== */  
+  
   function getDecimalSeparator() {
     // Get the locale for an estimate of the decimal separator
     let locale;
@@ -178,15 +199,11 @@
     } else {
       locale = navigator.userLanguage || navigator.language || navigator.browserLanguage || 'en';
     }
-
-    console.log(locale);
+    console.log("Locale: " + locale);
 
     const numberWithDecimalSeparator = 1.1;
     return numberWithDecimalSeparator.toLocaleString(locale).substring(1, 2);
 
-    //console.log(Intl.NumberFormat(locale).formatToParts(numberWithDecimalSeparator));
-    //return ",";
-    
     // Format a number to get the decimal separator
     //const numberWithDecimalSeparator = 1.1;
     //return Intl.NumberFormat(locale)
@@ -194,27 +211,11 @@
     //    .find(part => part.type === 'decimal')
     //    .value;
   }
-
   
   function toCSV(number, precision = 6) {
-    //console.log(number);
     // Store numbers to 6 digits precision
     return number.toPrecision(precision).toString().replace('.',decimalSeparator);
   }
-
-  function toNumber(string){
-    return parseFloat( string.replace(',','.') );
-  }
-
-  
-  $("#deleteData").click( () => { 
-    if( dataCanBeRemoved () ) {
-      rawData = [];
-      canvas.clear();
-      // Update plots
-      updatePlots();
-    }
-  });
 
   // Settings for CSV
   let timeStr  = "time [s]";
@@ -234,14 +235,15 @@
     
     // Check if there is data to be written
     if( rawData.length === 0 ) return;
-        
+    
+    // First line contains headers and meta data
     let csvData = [];
-
-    // first line contains headers and meta data
     csvData.push({[timeStr]: "", [posXStr]: "", [posYStr]: "", 
                   [velXStr]: "", [velYStr]: "", [accXStr]: "", [accYStr]: "",
                   [fpsStr]: toCSV(FPS), [origXStr]: toCSV(originX), [origYStr]: toCSV(originY), 
                   [scaleStr]: toCSV(pixelsPerMeter)}  );
+
+    // Remove velocity and/or acceleration depending on user setting
     if( showVelocity == false ) {
       delete csvData[0][velXStr];
       delete csvData[0][velYStr];      
@@ -274,7 +276,6 @@
         accelerations.push({frame: frame, t: meanT, x: accelX, y: accelY});
       }
     });
-
     
     // Frame tolerance decides when velocities are grouped with position entries in one row
     let frameTolerance = avoidEmptyCells ? 0.51 : 0.01;
@@ -338,13 +339,12 @@
       }       
     });
     
-
-    var csv = Papa.unparse( csvData, {quotes : true, 
+    // Convert the csvData to a csv-formatted string
+    let csv = Papa.unparse( csvData, {quotes : true, 
                                       delimiter : delimiter === "tab" ? "\t" : delimiter } );
-    console.log(csv);
-
-
+    //console.log(csv);
     
+    // Create a download file based on the video name
     let videoFile = $('#videoInput').prop('files')[0];
     let videoName = (typeof videoFile === "undefined" ) ? "data" : videoFile.name;
     let filename = prompt("Save as...", videoName.substr(0, videoName.lastIndexOf('.'))+".csv");
@@ -354,13 +354,7 @@
 
   });
   
-  function isNumeric(str) {
-    if (typeof str != "string") return false; // we only process strings!  
-    let string = str.replace(',','.')
-    return !isNaN(string) && // use type coercion to parse the _entirety_ of the string
-           !isNaN(parseFloat(string)) // ...and ensure strings of whitespace fail
-  }
-  
+  // When cvsImport is clicked (dummy button) ask if data can be removed and trigger csvInput  
   $("#csvImport").click( () => {
     if( dataCanBeRemoved() ) {      
       // Progagate to hidden DOM element
@@ -368,15 +362,13 @@
     }
   });
   
-  // Add event listener for when file is selected
+  // Add event listener for when csv-file is selected
   $("#csvInput").change( function() {
     // Get the file
     let file = this.files[0];    
     Papa.parse(file, {
       header: true,
       complete: function(results) {
-        //console.log(results.data);
-        // TODO: fps disabled?
         
         // check header integrety
         if( results.data.length > 0 &&
@@ -390,8 +382,6 @@
           // Update the header info
           let meta = results.data[0];
           updateFPS( toNumber( meta[fpsStr] ) );
-          //fpsInput.value = toNumber( meta[fpsStr] );
-          //fpsInput.onchange();          
           updateOrigin( toNumber( meta[origXStr] ), toNumber( meta[origYStr] ) );
           updateScale( toNumber( meta[scaleStr] ) );
 
@@ -406,7 +396,6 @@
               let yPos = originY - toNumber(item[posYStr])*pixelsPerMeter;
               let rawDataPoint = {t: time, x: xPos, y: yPos };  
 
-              //console.log(rawDataPoint );
               addRawData( rawDataPoint );
             }
           }
@@ -414,15 +403,13 @@
           // Update plots
           updatePlots();
         } else {
-          // Remove status message
-          //statusMsg.innerHTML = "Error loading csv file: header information not complete";
+          // Header is not valid: send an alert
           alert("Error loading csv file: header information not complete");
         }
       }
     });
     
   });
-  
 
   // Create an invisible download element
   function download(filename, text) {
@@ -435,6 +422,11 @@
     document.body.removeChild(element);
   }
 
+
+  /* ============= Video SECTION =================
+       Importing a video file
+     =========================================== */  
+  
   $("#videoImport").click( () => {
     if( dataCanBeRemoved() ) {      
       // Progagate to hidden DOM element
@@ -831,6 +823,10 @@
       setScale1(evt);
     } else if( canvasClick === "setScale2" ) {
       setScale2(evt);
+    } else if( canvasClick === "setBox1" ) {
+      setBox1(evt);
+    } else if( canvasClick === "setBox2" ) {
+      setBox2(evt);
     } 
   });
 
@@ -948,7 +944,8 @@
         canvasClick = "";
         //console.log("call onVideoStarted()")
         //console.log(video);
-        onVideoStarted();
+        //onVideoStarted();
+        setBox();
       } else {
         $('#statusMsg').html( "Click on the object" );
         canvasClick = "addRawDataPoint";
@@ -969,14 +966,6 @@
     // Get mouse position in pixels
     let posPx = getMousePos( evt );
 
-    //console.log(evt);
-
-    //console.log(posPx);
-
-    /*let circle = new fabric.Circle({ left: posPx.x, top: posPx.y, radius: 3, 
-                                    stroke: 'red', strokeWidth: 1, fill: 'rgba(0,0,0,0)' });
-    canvas.add( circle );
-    */           
     // Add raw data
     let rawDataPoint = {t: frameNumber, x: posPx.x, y: posPx.y};
     addRawData( rawDataPoint );
@@ -984,15 +973,14 @@
     // Update plots
     updatePlots();
     
+    // Draw a temporary marker, visible until we go to the next frame
     let markerP = fabric.util.object.clone( markerPoint ) ;
     markerP.set({left: posPx.x, top: posPx.y});
     highlightMarker( markerP );
     canvas.add(markerP );
 
-
     // Go to next frame with a small delay
     setTimeout(function() { gotoFrame(frameNumber+framesToSkip); }, 200);
-    
   }
 
   function addRawData( rawDataPoint ) {
@@ -1121,21 +1109,7 @@
     }
   }
 
-  function getMousePos( evt ) {
-
-    /*let rect = thisCanvas.getBoundingClientRect();
-    let scaleX = thisCanvas.width / width;    // relationship bitmap vs. element for X
-    let scaleY = thisCanvas.height / height;  // relationship bitmap vs. element for Y
-
-    //console.log("scaleX= "+ scaleX+ " scale="+canvas.width/width );
-    
-    return {
-      x: (evt.clientX - rect.left)/scaleX,
-      y: (evt.clientY - rect.top)/scaleY
-    };*/
-    
-    //console.log(canvas);
-    
+  function getMousePos( evt ) {        
     let rect = canvas.lowerCanvasEl.getBoundingClientRect();
     let scaleX = canvas.width / width;    // relationship bitmap vs. element for X
     let scaleY = canvas.height / height;  // relationship bitmap vs. element for Y
@@ -1144,8 +1118,6 @@
       x: (evt.clientX - rect.left)/scaleX,
       y: (evt.clientY - rect.top)/scaleY
     };
-
-    
   }
 
   function getXYposition(posPx) {
@@ -1153,121 +1125,101 @@
       x: (posPx.x-originX)/pixelsPerMeter,       
       y: (originY-posPx.y)/pixelsPerMeter 
     };
+  }  
+  
+  // Set the box (1st point)
+  function setBox1(evt) {
+    // Get mouse position in pixels
+    let posPx = getMousePos( evt );
+    
+    // Set the box (1st point)
+    box1 = {x: posPx.x, y: posPx.y};
+    
+    // Reset statusMsg and canvas click event
+    canvasClick = "setBox2";
+    $('#statusMsg').html( "Click on the second point" );    
   }
 
-  
-  /*let streaming = false;
-  startAndStopAuto.addEventListener('click', () => {
-    if (!streaming) {
-        //utils.clearError();
-        //video.play().then(() => {
-        video.pause();
-        onVideoStarted();
-        //});
-    } else {
-        video.pause();
-        video.currentTime = 0.5/FPS;
-        onVideoStopped();
-    }
-  });
-
-  function onVideoStopped() {
-    streaming = false;
-    //canvasContext.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
-    startAndStopAuto.innerText = 'Automatic';
+  // Set the box (2nd point)
+  function setBox2(evt) {
+    // Get mouse position in pixels
+    let posPx = getMousePos( evt );
+        
+    // Update box (2nd point)
+    box2 = {x: posPx.x, y: posPx.y};
+        
+    // Reset statusMsg and canvas click event
+    canvasClick = "";
+    $('#statusMsg').html( "Processing..." );
+    onVideoStarted();
   }
-  */
-  
 
+  // Set the box
+  function setBox() {
+    canvasClick = "setBox1";
+    // set statusMsg
+    $('#statusMsg').html( "Click on the first point" );
+  }
+    
   // Automatic analysis
   function onVideoStarted() {
-  //streaming = true;
-  //startAndStopAuto.innerText = 'Stop';
-  
-  // TODO: check if videoHeight/videoWidth can be used to see if video is turned 90 degrees
-  console.log(video);  
-  video.height = video.width * (video.videoHeight / 
-                                          video.videoWidth);
-  //utils.executeCode('codeEditor');
-  
-  //let video = document.getElementById('video');
-  let cap = new cv.VideoCapture(video);
-  
-  // take first frame of the video
-  let frame = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-  cap.read(frame);
-
-  // hardcode the initial location of window
-  //let trackWindow = new cv.Rect(150, 60, 63, 125);
-  //let x1 = 200, y1=0, x2=250, y2=60;
-  //let trackWindow = new cv.Rect(200, 0, 80, 50);
-  console.log(scale1);
-  console.log(scale2);
-  let trackWindow = new cv.Rect(scale1.x, scale1.y, scale2.x-scale1.x, scale2.y-scale1.y);
-
-  console.log("TrackWindow");
-  console.log(trackWindow);
-
-
-  // set up the ROI for tracking
-  let roi = frame.roi(trackWindow);
-  let hsvRoi = new cv.Mat();
-  cv.cvtColor(roi, hsvRoi, cv.COLOR_RGBA2RGB);
-  cv.cvtColor(hsvRoi, hsvRoi, cv.COLOR_RGB2HSV);
-  let mask = new cv.Mat();
-  //let lowScalar = new cv.Scalar(30, 30, 0);
-  let lowScalar = new cv.Scalar(30, 30, 0);
-  let highScalar = new cv.Scalar(180, 180, 180);
-  let low = new cv.Mat(hsvRoi.rows, hsvRoi.cols, hsvRoi.type(), lowScalar);
-  let high = new cv.Mat(hsvRoi.rows, hsvRoi.cols, hsvRoi.type(), highScalar);
-  cv.inRange(hsvRoi, low, high, mask);
-  let roiHist = new cv.Mat();
-  let hsvRoiVec = new cv.MatVector();
-  hsvRoiVec.push_back(hsvRoi);
-  cv.calcHist(hsvRoiVec, [0], mask, roiHist, [180], [0, 180]);
-  cv.normalize(roiHist, roiHist, 0, 255, cv.NORM_MINMAX);
-
-  // delete useless mats.
-  roi.delete(); hsvRoi.delete(); mask.delete(); low.delete(); high.delete();
-  hsvRoiVec.delete();
-
-  // Setup the termination criteria, either 10 iteration or move by atleast 1 pt
-  let termCrit = new cv.TermCriteria(cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 
-                                     10, 1);
-  let hsv = new cv.Mat(video.height, video.width, cv.CV_8UC3);
-  let hsvVec = new cv.MatVector();
-  hsvVec.push_back(hsv);
-  let dst = new cv.Mat();
-  let trackBox = null;
-
-    console.log("tot hier 4");
-
-   /*let xPos2 = trackWindow.x+0.5*trackWindow.width;
-   let yPos2 = trackWindow.y+0.5*trackWindow.height;
     
+    // TODO: check if videoHeight/videoWidth can be used to see if video is turned 90 degrees
+    console.log(video);  
+    video.height = video.width * (video.videoHeight / 
+                                          video.videoWidth);
+  
+    let cap = new cv.VideoCapture(video);
+  
+    // take first frame of the video
+    let frame = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+    cap.read(frame);
 
-  let rect = new fabric.Rect({ left: xPos2, top: yPos2, width: trackWindow.width, 
-                              height: trackWindow.height,
-                              fill: 'rgba(0,0,0,0)', stroke: 'red', strokeWidth: 2 });  
+    // initial location of window
+    let trackWindow = new cv.Rect(box1.x, box1.y, box2.x-box1.x, box2.y-box1.y);
 
-    */
-  /*let rect = new fabric.Rect({left: 0.5*(scale1.x+scale2.x), top: 0.5*(scale1.y+scale2.y), 
-                              height: scale2.y-scale1.y , width: scale2.x-scale1.x, 
-                              fill: 'rgba(0,0,0,0)', stroke: 'red', strokeWidth: 2 });  */
-  //canvas.add(rect);
+    console.log("TrackWindow");
+    console.log(trackWindow);
 
+    // set up the ROI for tracking
+    let roi = frame.roi(trackWindow);
+    let hsvRoi = new cv.Mat();
+    cv.cvtColor(roi, hsvRoi, cv.COLOR_RGBA2RGB);
+    cv.cvtColor(hsvRoi, hsvRoi, cv.COLOR_RGB2HSV);
+    let mask = new cv.Mat();
+    //let lowScalar = new cv.Scalar(30, 30, 0);
+    let lowScalar = new cv.Scalar(30, 30, 0);
+    let highScalar = new cv.Scalar(180, 180, 180);
+    let low = new cv.Mat(hsvRoi.rows, hsvRoi.cols, hsvRoi.type(), lowScalar);
+    let high = new cv.Mat(hsvRoi.rows, hsvRoi.cols, hsvRoi.type(), highScalar);
+    cv.inRange(hsvRoi, low, high, mask);
+    let roiHist = new cv.Mat();
+    let hsvRoiVec = new cv.MatVector();
+    hsvRoiVec.push_back(hsvRoi);
+    cv.calcHist(hsvRoiVec, [0], mask, roiHist, [180], [0, 180]);
+    cv.normalize(roiHist, roiHist, 0, 255, cv.NORM_MINMAX);
 
+    // delete useless mats.
+    roi.delete(); hsvRoi.delete(); mask.delete(); low.delete(); high.delete();
+    hsvRoiVec.delete();
 
-  function processVideo() {
-    try {
-        if (!analysisStarted) {
-            // clean and stop.
-            frame.delete(); dst.delete(); hsvVec.delete(); roiHist.delete(); 
-          hsv.delete();
-            canvas.remove(rect);
-            return;
+    // Setup the termination criteria, either 10 iteration or move by atleast 1 pt
+    let termCrit = new cv.TermCriteria(cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 
+                                       10, 1);
+    let hsv = new cv.Mat(video.height, video.width, cv.CV_8UC3);
+    let hsvVec = new cv.MatVector();
+    hsvVec.push_back(hsv);
+    let dst = new cv.Mat();
+    let trackBox = null;
+
+    function processVideo() {
+      try {  
+        if (!analysisStarted) {    
+          // clean and stop.
+          frame.delete(); dst.delete(); hsvVec.delete(); roiHist.delete(); hsv.delete();
+          //canvas.remove(rect);
+          return;
         }
-        //let begin = Date.now();
 
         // start processing.
         cap.read(frame);
@@ -1275,110 +1227,63 @@
         cv.cvtColor(hsv, hsv, cv.COLOR_RGB2HSV);
         cv.calcBackProject(hsvVec, [0], roiHist, dst, [0, 180], 1);
 
-        // apply camshift to get the new location
-        [trackBox, trackWindow] = cv.CamShift(dst, trackWindow, termCrit);
-         
-        console.log(trackBox);
-      
-      let xPos = trackBox.center.x;
-      let yPos = trackBox.center.y;
-      let xSize = trackBox.size.width;
-      let ySize = trackBox.size.height;
-      let angle = trackBox.angle;
-
-
-      
-        // Draw it on image
-        /*let pts = cv.rotatedRectPoints(trackBox);
-        //let trackWindow = new cv.Rect(150, 60, 63, 125);
-        //let x1 = 200, y1=0, x2=250, y2=60;
-        //pts = [{x: x1, y: y1}, {x: x2, y: y1}, {x: x2, y: y2}, {x: x1, y: y2}]
-        //console.log(pts);
-
-        cv.line(frame, pts[0], pts[1], [255, 0, 0, 255], 3);
-        cv.line(frame, pts[1], pts[2], [255, 0, 0, 255], 3);
-        cv.line(frame, pts[2], pts[3], [255, 0, 0, 255], 3);
-        cv.line(frame, pts[3], pts[0], [255, 0, 0, 255], 3);
-        cv.imshow('canvasOutput', frame);
-        */
-
-        // apply meanshift instead
-        /*[, trackWindow] = cv.meanShift(dst, trackWindow, termCrit);
-        let xPos = trackWindow.x+0.5*trackWindow.width;
-        let yPos = trackWindow.y+0.5*trackWindow.height;
-        let xSize = trackWindow.width;
-        let ySize = trackWindow.height;
-        let angle = 0;
-        */
-
-        // Draw it on image
-        /*let [x, y, w, h] = [trackWindow.x, trackWindow.y, trackWindow.width, 
-                            trackWindow.height];
-        cv.rectangle(frame, new cv.Point(x, y), new cv.Point(x+w, y+h), 
-                     [255, 0, 0, 255], 2);
-        cv.imshow('canvasOutput', frame);
-        */
-      
-      
-      
-      
-     let rawDataPoint = {t: frameNumber, x: xPos, y: yPos};
-     addRawData( rawDataPoint );
-    
-      
-      
-    // Update plots
-    updatePlots();
-    
-      //rect.set({left: xPos, top: yPos});//, width: trackWindow.width, height: trackWindow.height });
-      //rect.setCoords();
-      
-        let rect = new fabric.Rect({ left: xPos, top: yPos, width: xSize, height: ySize,
-                                     angle: angle,
-                              fill: 'rgba(0,0,0,0)', stroke: 'red', strokeWidth: 2 });  
-  canvas.add(rect);
-
-      console.log(xPos + ", " + yPos + ", " + trackWindow.width + ", "+ trackWindow.height);
-      
-    let markerP = fabric.util.object.clone( markerPoint ) ;
-    markerP.set({left: xPos, top: yPos});
-    highlightMarker( markerP );
-    canvas.add( markerP );
-      canvas.requestRenderAll();
-
-        console.log(video.currentTime);
-      setTimeout( function() {
-        if( gotoFrame(frameNumber+framesToSkip) === false ) {
-          startAndStopManual.click();
+        let xPos, yPos, xSize, ySize, angle = 0;
+        if( allowRotations ) {
+          // apply camshift to get the new location
+          [trackBox, trackWindow] = cv.CamShift(dst, trackWindow, termCrit);
+          xPos = trackBox.center.x;
+          yPos = trackBox.center.y;
+          xSize = trackBox.size.width;
+          ySize = trackBox.size.height;
+          angle = trackBox.angle;
+        } else {
+          // apply meanshift instead
+          [, trackWindow] = cv.meanShift(dst, trackWindow, termCrit);
+          xPos = trackWindow.x+0.5*trackWindow.width;
+          yPos = trackWindow.y+0.5*trackWindow.height;
+          xSize = trackWindow.width;
+          ySize = trackWindow.height;
         }
-        video.addEventListener("seeked", function(e) {
-          e.target.removeEventListener(e.type, arguments.callee); 
-          processVideo();
-        });
-        //setTimeout(processVideo, 50 );//delay);
-      }, 200 );
 
-        /*if( gotoFrame(frameNumber+framesToSkip) === false ) {
-          startAndStopManual.click();
-        }*/
-        
-        //video.currentTime = Math.min(video.duration, 
-        //                                  video.currentTime + 1/FPS);
-      
-        // schedule the next one.
-        //let delay = 1000/FPS - (Date.now() - begin);
-        //setTimeout(processVideo, 200 );//delay);
-    } catch (err) {
-        //utils.printError(err);
-    }
-  };
-
-  //video.currentTime = 0.5/FPS;
+        // Draw it on image
+        let rect = new fabric.Rect({ left: xPos, top: yPos, width: xSize, height: ySize, angle: angle,
+                                     fill: 'rgba(0,0,0,0)', stroke: 'red', strokeWidth: 2 });  
+        canvas.add(rect);
   
-  // schedule the first one.
-  setTimeout(processVideo, 0);
-}
+        let rawDataPoint = {t: frameNumber, x: xPos, y: yPos};
+        addRawData( rawDataPoint );
+    
+        // Update plots
+        updatePlots();
 
+        //console.log(xPos + ", " + yPos + ", " + trackWindow.width + ", "+ trackWindow.height);
+      
+        let markerP = fabric.util.object.clone( markerPoint ) ;
+        markerP.set({left: xPos, top: yPos});
+        highlightMarker( markerP );
+        canvas.add( markerP );
+        canvas.requestRenderAll();
+
+        setTimeout( function() {
+          if( gotoFrame(frameNumber+framesToSkip) === false ) {
+            startAndStopManual.click();
+          }
+          video.addEventListener("seeked", function(e) {
+            e.target.removeEventListener(e.type, arguments.callee); 
+            processVideo();
+          });
+        }, 200 );
+      } catch (err) {
+        alert("An error occuring during the automatic analysis: "+err);
+      }
+    };
+
+    // schedule the first one.
+    setTimeout(processVideo, 0);
+  }
+
+  
+  
   // Plotting stuff
   let options= { scales: { xAxes: [{ scaleLabel:{ labelString: 'time (s)', 
                                                   display: true},
