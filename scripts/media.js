@@ -49,8 +49,8 @@ const onChangeFile = (mediainfo) => {
         result.media.track.forEach(track => {
           if( track["@type"] === "Video") {
             console.log(track.FrameRate);
-            frameRate.innerHTML = "Frame rate = "+track.FrameRate;
-            frameRate.innerHTML = "Rotation   = "+track.Rotation;
+            frameRate.innerHTML = "Frame rate = "+track.FrameRate + "<br>";
+            frameRate.innerHTML += "Rotation   = "+track.Rotation;
 
           }
         } );
