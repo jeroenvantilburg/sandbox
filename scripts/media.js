@@ -49,7 +49,9 @@ const onChangeFile = (mediainfo) => {
         result.media.track.forEach(track => {
           if( track["@type"] === "Video") {
             console.log(track.FrameRate);
-            frameRate.innerHTML = "Frame rate 1. = "+track.FrameRate;
+            frameRate.innerHTML = "Frame rate = "+track.FrameRate;
+            frameRate.innerHTML = "Rotation   = "+track.Rotation;
+
           }
         } );
         
@@ -66,6 +68,6 @@ const onChangeFile = (mediainfo) => {
   }
 }
 
-MediaInfo({ format: 'object' }, (mediainfo) => {
+MediaInfo({ chunkSize: 256*256, format: 'object' }, (mediainfo) => {
   fileinput.addEventListener('change', () => onChangeFile(mediainfo))
 })
