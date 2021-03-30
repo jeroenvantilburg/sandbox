@@ -68,6 +68,6 @@ const onChangeFile = (mediainfo) => {
   }
 }
 
-MediaInfo({ chunkSize: 256*256, format: 'object' }, (mediainfo) => {
+MediaInfo({ chunkSize: 4*1024, format: 'object' }, (mediainfo) => {
   fileinput.addEventListener('change', () => onChangeFile(mediainfo))
 })
