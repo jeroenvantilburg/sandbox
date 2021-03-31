@@ -6,24 +6,33 @@
     </head>
     <body>
         <p>
-            <input type="file" id="input" />
+            <input type="file" id="input" />...
         </p>
         <p><pre id="result"></pre></p>
 
+<script type="text/javascript">  
+   function iOS() {
+    //return true;
+    return [ 'iPad Simulator', 'iPhone Simulator', 'iPod Simulator',
+            'iPad', 'iPhone', 'iPod' ].includes(navigator.platform)
+      || (navigator.userAgent.includes("Mac") && "ontouchend" in document);  // iPad on iOS 13 detection
+  }
+  </script>
+  
         <script type="text/javascript">
             // Load the WebAssembly MediaInfo module if the browser supports it,
             // otherwise load the asmjs module
             var MediaInfoJs = document.createElement('script');
-            //if ('WebAssembly' in window && typeof Promise  !== 'undefined') {
+            if ('WebAssembly' in window && typeof Promise  !== 'undefined' && !iOS() ) {
               MediaInfoJs.src = "scripts/MediaInfoWasm.js";
-            //} else {
+            } else {
               MediaInfoJs.src = "scripts/MediaInfo.js";
-            //}
+            }
             document.body.appendChild(MediaInfoJs);
 
             // Continue initialization
             MediaInfoJs.onload = function () {
-              var MediaInfoModule, MI, processing = false, CHUNK_SIZE = 1024;//2048 * 2048;
+              var MediaInfoModule, MI, processing = false, CHUNK_SIZE = 2048 * 2048;
 
               var finish = function() {
                   MI.Close();
@@ -86,10 +95,10 @@
                 MI = new MediaInfoModule.MediaInfo();
 
                 //Open the file
-                //MI.Open(file, callback);
+                MI.Open(file, callback);
 
                 // By buffer example:
-                MI.Option('File_FileName', file.name);
+                /*MI.Option('File_FileName', file.name);
                 MI.Open_Buffer_Init(file.size, 0);
 
                 var loop = function(length) {
@@ -133,7 +142,7 @@
                 };
 
                  // Start
-                loop(CHUNK_SIZE);
+                loop(CHUNK_SIZE);*/
               }
 
               // Initialise emscripten module
