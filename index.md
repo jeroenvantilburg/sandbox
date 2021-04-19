@@ -8,8 +8,6 @@
 layout: home
 ---
 
-## Online systeembord
+## Sandbox
 
-[![Webapp screenshot](https://jeroenvantilburg.github.io/systeembord/screenshot.png)](https://jeroenvantilburg.github.io/systeembord)
-
-Link naar de webapp [Online systeembord](jeroenvantilburg.github.io/systeembord).
+This is my sandbox.

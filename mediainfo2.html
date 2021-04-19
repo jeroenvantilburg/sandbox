@@ -24,9 +24,9 @@
             // otherwise load the asmjs module
             var MediaInfoJs = document.createElement('script');
             if ('WebAssembly' in window && typeof Promise  !== 'undefined' && !iOS() ) {
-              MediaInfoJs.src = "scripts/MediaInfoWasm.js";
+              MediaInfoJs.src = "../motionticker/scripts/MediaInfoWasm.js";
             } else {
-              MediaInfoJs.src = "scripts/MediaInfo.js";
+              MediaInfoJs.src = "../motionticker/scripts/MediaInfo.js";
             }
             document.body.appendChild(MediaInfoJs);
 
