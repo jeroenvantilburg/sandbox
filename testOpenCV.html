@@ -1,0 +1,97 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title>Template Match Example</title>
+</head>
+<body>
+<h2>Template Match Example</h2>
+<p>
+    &lt;canvas&gt; elements named <b>imageCanvasInput</b>, <b>templateCanvasInput</b>
+    and <b>canvasOutput</b> have been prepared.<br>
+    Click <b>Try it</b> button to see the result. You can choose another image.<br>
+    You can change the code in the &lt;textarea&gt; to investigate more.
+</p>
+<div>
+<div class="control"><button onclick="start()" id="tryIt">Try it</button></div>
+</div>
+<div>
+    <table cellpadding="0" cellspacing="0" width="0" border="0">
+    <tr>
+        <td>
+            <canvas width="512" height="512" id="imageCanvasInput"></canvas>
+        </td>
+        <td>
+            <canvas id="canvasOutput"></canvas>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="caption">imageCanvasInput <input type="file" id="fileInput" name="file" accept="image/*" /></div>
+        </td>
+        <td>
+            <div class="caption">canvasOutput</div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <canvas width="90" height="100" id="templateCanvasInput"></canvas>
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="caption">templateCanvasInput <input type="file" id="templateFileInput" name="file" accept="image/*" /></div>
+        </td>
+        <td>
+        </td>
+    </tr>
+    </table>
+</div>
+
+<!--script async src="https://docs.opencv.org/4.5.2/opencv.js" id="opencv"></script-->  
+<script async src="scripts/opencv.js" id="opencv"></script>  
+
+
+
+<script>
+
+var imageCanvas = document.getElementById('imageCanvasInput'),
+imageContext = imageCanvas.getContext('2d');
+
+let base_image = new Image();
+base_image.onload = function(){
+    imageContext.drawImage(base_image, 0, 0);
+}
+base_image.src = 'lena.jpg';
+
+var tempCanvas = document.getElementById('templateCanvasInput'),
+tempContext = tempCanvas.getContext('2d');
+
+let temp_image = new Image();
+temp_image.onload = function(){
+    tempContext.drawImage(temp_image, 0, 0);
+}
+temp_image.src = 'lenaFace.png';
+
+
+
+//document.getElementById('opencv').onload = function () {
+function start() {
+let src = cv.imread('imageCanvasInput');
+let templ = cv.imread('templateCanvasInput');
+let dst = new cv.Mat();
+let mask = new cv.Mat();
+cv.matchTemplate(src, templ, dst, cv.TM_CCOEFF, mask);
+let result = cv.minMaxLoc(dst, mask);
+let maxPoint = result.maxLoc;
+let color = new cv.Scalar(255, 0, 0, 255);
+let point = new cv.Point(maxPoint.x + templ.cols, maxPoint.y + templ.rows);
+cv.rectangle(src, maxPoint, point, color, 2, cv.LINE_8, 0);
+cv.imshow('canvasOutput', src);
+src.delete(); dst.delete(); mask.delete();
+}
+</script>
+
+</body>
+</html>
