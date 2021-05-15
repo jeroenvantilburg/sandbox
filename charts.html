@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>runJS</title>
+  <body>
+    <button onclick="runCode();">Run</button>
+    <input id="save-svg" type="button" value="Save as SVG"/>
+
+    <button id="save-png">Save as PNG</button>
+    
+    <br/>
+    <div id="errorOutput"></div>
+    
+    <textarea rows="20" cols="50" id="codeEditor"></textarea>
+    
+    <div id="result">
+    </div>
+
+    <div id="myDiv" style="width: 600px; height: 400px;"></div>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script id="codeSnippet" type="text/code-snippet">
+var trace1 = {
+  x: [1, 2, 3, 4],
+  y: [10, 15, 13, 17],
+  mode: 'markers',
+  name: 'Scatter'
+};
+
+var trace2 = {
+  x: [2, 3, 4, 5],
+  y: [16, 5, 11, 9],
+  mode: 'lines',
+  line: {shape: 'spline'},
+  name: 'Spline'
+};
+
+var trace3 = {
+  x: [1, 2, 3, 4],
+  y: [12, 9, 15, 12],
+  mode: 'lines+markers',
+  name: 'Scatter and Lines'
+};
+
+var data = [trace1, trace2, trace3];
+
+var layout = {
+  template: template,
+  title: 'Title of the Graph',
+  xaxis: {
+    title: 'x-axis title',
+  },
+  yaxis: {
+    title: 'y-axis title'
+  }
+};
+
+
+Plotly.newPlot('myDiv', data, layout);
+
+</script>
+        
+    <script>
+      let errorOutput = document.getElementById('errorOutput');
+      let chartOutput = document.getElementById('myDiv');
+      let base64 = "";
+
+      var data = [];
+      var layout = {
+       xaxis: { showline: true,     
+               ticks: 'inside',
+               ticklen: 4,
+               tickwidth: 1
+              },
+       yaxis: { showline: true,
+                ticks: 'inside',
+                ticklen: 4,
+                tickwidth: 1
+              },
+      };
+      let template = Plotly.makeTemplate({data,layout});
+
+
+
+      loadCode('codeSnippet', 'codeEditor');
+      
+      //google.charts.load('current', {'packages':['corechart']});
+      //google.charts.setOnLoadCallback( runCode );
+      /*var config = {
+  modeBarButtonsToAdd: [{
+    name: 'toImageSVG',
+    icon: Plotly.Icons.camera,
+    click: function(gd) {
+      Plotly.downloadImage(gd, {format: 'svg', filename: 'newplot.svg'})
+    }
+  }]
+}*/
+
+
+      runCode('codeEditor');
+      
+      function loadCode(scriptId, textAreaId) {
+        let scriptNode = document.getElementById(scriptId);
+        let textArea = document.getElementById(textAreaId);
+        if (scriptNode.type !== 'text/code-snippet') {
+            throw Error('Unknown code snippet type');
+        }
+        textArea.value = scriptNode.text.replace(/^\n/, '');
+      };
+
+
+      
+      function runCode() {
+        try {
+            clearError();
+            let code = document.getElementById('codeEditor').value;
+            let chart = eval(code);
+
+            //base64 = chart.getImageURI();
+          
+        } catch (err) {
+            printError(err);
+        }
+      }
+      
+    function clearError() {
+        errorOutput.innerHTML = '';
+    };
+
+    function printError(err) {
+        errorOutput.innerHTML = err;
+    };
+
+      
+    document.getElementById('save-svg').addEventListener('click', function () {
+
+      Plotly.downloadImage(chartOutput, {filename: 'newplot', format: 'svg'})
+
+
+      //get svg element.
+      /*var svg = chartOutput.getElementsByTagName('svg')[0];
+
+      //get svg source.
+      var serializer = new XMLSerializer();
+      var source = serializer.serializeToString(svg);
+
+      //add name spaces.
+      if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+      }
+
+      //add xml declaration
+      source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+      //convert svg source to URI data scheme.
+      var url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(source);
+
+      downloadURL( url, "chart.svg" );
+      */
+    });
+
+      
+  document.getElementById('save-png').addEventListener('click', function () {
+    Plotly.downloadImage(chartOutput, {filename: 'newplot', format: 'png'})    
+    //downloadURL( base64, "chart.png" );
+  });
+
+  function downloadURL( url, fileName ) {
+    var link = document.createElement("a");
+    document.body.appendChild(link); // for Firefox
+    link.setAttribute("href", url);
+    link.setAttribute("download", fileName );
+    link.click();
+    document.body.removeChild(link);
+  }
+      
+    </script>
+
+
+</body>
+</html>
