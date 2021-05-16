@@ -11,7 +11,7 @@
     <br/>
     <div id="errorOutput"></div>
     
-    <textarea rows="20" cols="50" id="codeEditor"></textarea>
+    <textarea rows="20" cols="80" id="codeEditor"></textarea>
     
     <div id="result">
     </div>
@@ -28,12 +28,7 @@ let data1 = [['x','y1'],[1,2.4],[2,2.9] ];
 let data2 = [['x','y2'],[1.5,1.8] ];
 let data3 = [['x','y3'],[0.5,1.5],[1,1.4],[1.5,4.0],[2.0,5.0],[3.0,4.5],[3.5,1.0] ];
 
-var p = new gv.DataTable();
-p.addColumn('number', 'x');
-p.addColumn('number', 'text');
-p.addColumn({type: 'string', role: 'annotation'});
-p.addRow([2.5, 0.8, 'bla']);
-
+let p = phys.createDataPoint(2.8, 0.8, 'Some text');
 let d = phys.combineSeries( [data0, data1, data2, data3, p ] );
 
 var data = gv.arrayToDataTable([
@@ -52,7 +47,7 @@ var options = {
   hAxis: {title: '\u0394time (s)', minValue: 0, maxValue: 4},
   seriesType: 'scatter',
   series: {1: {type: 'line'}, 3: {type: 'line', curveType: 'function'}, 
-               4: {pointSize: 0, annotations: { stemColor : 'none' }} },
+               4: {pointSize: 0, visibleInLegend: false, annotations: { stemColor : 'none' }} },
   interpolateNulls: true,
 };
 
@@ -60,8 +55,6 @@ options.hAxis.titleTextStyle = {italic: false };
 options.vAxis.titleTextStyle = {italic: false };
 options.vAxis.gridlines= {count: 50, multiple: 1};
 options.hAxis.gridlines= {count: 20, multiple: 0.5};
-
-
 
 // Always needed
 let chart = new gv.ComboChart( chartOutput );
@@ -100,7 +93,7 @@ let phys = {
         argList1.push( j );
       }
       let argList2 = [];
-      for( let j=1; j < seriesDT[j].getNumberOfColumns(); ++j ) {
+      for( let j=1; j < seriesDT[i].getNumberOfColumns(); ++j ) {
         argList2.push( j );
       }
 
@@ -108,7 +101,17 @@ let phys = {
       joined = newJoined;
     }
     return joined;
+  },
+  
+  createDataPoint : function( x, y, text ) {
+    let p = new google.visualization.DataTable();
+    p.addColumn('number', 'x');
+    p.addColumn('number', text);
+    p.addColumn({type: 'string', role: 'annotation'});
+    p.addRow([x, y, text]);
+    return p;
   }
+
 }
     
       //runCode('codeEditor');
