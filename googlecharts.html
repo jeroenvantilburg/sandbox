@@ -21,30 +21,22 @@
 <script src="https://www.gstatic.com/charts/loader.js"></script>
 
 <script id="codeSnippet" type="text/code-snippet">
+let gv = google.visualization;
 
 let data0 = [['x','y0'],[1,2],[1,2.5], [2,2.1], [2,2.9], [3,3.2]  ];
 let data1 = [['x','y1'],[1,2.4],[2,2.9] ];
 let data2 = [['x','y2'],[1.5,1.8] ];
 let data3 = [['x','y3'],[0.5,1.5],[1,1.4],[1.5,4.0],[2.0,5.0],[3.0,4.5],[3.5,1.0] ];
 
-let d0 = google.visualization.arrayToDataTable( data0 );
-let d1 = google.visualization.arrayToDataTable( data1 );
-let d2 = google.visualization.arrayToDataTable( data2 );
-let d3 = google.visualization.arrayToDataTable( data3 );
-
-var p = new google.visualization.DataTable();
+var p = new gv.DataTable();
 p.addColumn('number', 'x');
 p.addColumn('number', 'text');
 p.addColumn({type: 'string', role: 'annotation'});
 p.addRow([2.5, 0.8, 'bla']);
 
-let d01 = google.visualization.data.join( d0, d1, 'full', [[0,0]],[1],[1]);
-let d012 = google.visualization.data.join( d01, d2, 'full', [[0,0]],[1,2],[1]);
-let d0123 = google.visualization.data.join( d012, d3, 'full', [[0,0]],[1,2,3],[1]);
-let d = google.visualization.data.join( d0123, p, 'full', [[0,0]],[1,2,3,4],[1,2]);
+let d = phys.combineSeries( [data0, data1, data2, data3, p ] );
 
-
-var data = google.visualization.arrayToDataTable([
+var data = gv.arrayToDataTable([
  ['x', 'y0', 'y1', 'y2', 'y3'],
  [ 1 , 2, 3, 4, null ],
  [ 1 , 2.5, 3.1, null, 4.5 ],
@@ -72,7 +64,7 @@ options.hAxis.gridlines= {count: 20, multiple: 0.5};
 
 
 // Always needed
-let chart = new google.visualization.ComboChart( chartOutput );
+let chart = new gv.ComboChart( chartOutput );
 chart.draw(d, options);
 chart;
 
@@ -89,6 +81,36 @@ chart;
       google.charts.load('current', {'packages':['corechart']});
       google.charts.setOnLoadCallback( runCode );
       
+let phys = {
+  
+  combineSeries : function( series ) {
+    let gv = google.visualization;
+
+    let seriesDT = [];
+    series.forEach( serie => { 
+      let dataTable = Array.isArray(serie) ? gv.arrayToDataTable( serie ) : serie;
+      seriesDT.push( dataTable );
+    });
+    if( seriesDT.length < 2 ) return;
+    let joined = seriesDT[0];
+    for( let i = 1; i < seriesDT.length; ++i ) {
+
+      let argList1 = [];
+      for( let j=1; j < joined.getNumberOfColumns(); ++j ) {
+        argList1.push( j );
+      }
+      let argList2 = [];
+      for( let j=1; j < seriesDT[j].getNumberOfColumns(); ++j ) {
+        argList2.push( j );
+      }
+
+      let newJoined = gv.data.join( joined, seriesDT[i], 'full', [[0,0]],argList1,argList2);
+      joined = newJoined;
+    }
+    return joined;
+  }
+}
+    
       //runCode('codeEditor');
       
       function loadCode(scriptId, textAreaId) {
