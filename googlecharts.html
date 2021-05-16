@@ -22,13 +22,26 @@
 
 <script id="codeSnippet" type="text/code-snippet">
 
-//let data0 = [[1,2],[1,2.5], [2,2.1], [2,2.9], [3,3.2]  ];
-//let data1 = [[1,2.4],[2,2.9] ];
-//let data2 = [[1.5,1.8] ];
-//let data3 = [[1,1.4],[2,1.9],[3,4.5] ];
+let data0 = [['x','y0'],[1,2],[1,2.5], [2,2.1], [2,2.9], [3,3.2]  ];
+let data1 = [['x','y1'],[1,2.4],[2,2.9] ];
+let data2 = [['x','y2'],[1.5,1.8] ];
+let data3 = [['x','y3'],[0.5,1.5],[1,1.4],[1.5,4.0],[2.0,5.0],[3.0,4.5],[3.5,1.0] ];
 
+let d0 = google.visualization.arrayToDataTable( data0 );
+let d1 = google.visualization.arrayToDataTable( data1 );
+let d2 = google.visualization.arrayToDataTable( data2 );
+let d3 = google.visualization.arrayToDataTable( data3 );
 
+var p = new google.visualization.DataTable();
+p.addColumn('number', 'x');
+p.addColumn('number', 'text');
+p.addColumn({type: 'string', role: 'annotation'});
+p.addRow([2.5, 0.8, 'bla']);
 
+let d01 = google.visualization.data.join( d0, d1, 'full', [[0,0]],[1],[1]);
+let d012 = google.visualization.data.join( d01, d2, 'full', [[0,0]],[1,2],[1]);
+let d0123 = google.visualization.data.join( d012, d3, 'full', [[0,0]],[1,2,3],[1]);
+let d = google.visualization.data.join( d0123, p, 'full', [[0,0]],[1,2,3,4],[1,2]);
 
 
 var data = google.visualization.arrayToDataTable([
@@ -44,20 +57,23 @@ var data = google.visualization.arrayToDataTable([
 var options = {
   title : 'My title',
   vAxis: {title: 'distance (m)'},
-  hAxis: {title: 'time (s)', minValue: 0, maxValue: 4},
+  hAxis: {title: '\u0394time (s)', minValue: 0, maxValue: 4},
   seriesType: 'scatter',
-  series: {2: {type: 'line'}, 3: {type: 'line', curveType: 'function'}},
-  interpolateNulls: true
+  series: {1: {type: 'line'}, 3: {type: 'line', curveType: 'function'}, 
+               4: {pointSize: 0, annotations: { stemColor : 'none' }} },
+  interpolateNulls: true,
 };
 
 options.hAxis.titleTextStyle = {italic: false };
 options.vAxis.titleTextStyle = {italic: false };
+options.vAxis.gridlines= {count: 50, multiple: 1};
+options.hAxis.gridlines= {count: 20, multiple: 0.5};
 
 
 
 // Always needed
 let chart = new google.visualization.ComboChart( chartOutput );
-chart.draw(data, options);
+chart.draw(d, options);
 chart;
 
 </script>
