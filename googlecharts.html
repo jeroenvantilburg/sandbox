@@ -3,7 +3,7 @@
 <head>
   <title>runJS</title>
   <body>
-    <button onclick="runCode();">Run</button>
+    <button id="runCode">Run</button>
     <input id="save-svg" type="button" value="Save as SVG"/>
 
     <button id="save-png">Save as PNG</button>
@@ -13,12 +13,10 @@
     
     <textarea rows="20" cols="80" id="codeEditor"></textarea>
     
-    <div id="result">
-    </div>
-
     <div id="chartOutput" style="width: 600px; height: 400px;"></div>
 
-<script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
 
 <script id="codeSnippet" type="text/code-snippet">
 let gv = google.visualization;
@@ -37,9 +35,9 @@ let data4 = gv.arrayToDataTable([
  [ 4.4 , null, 1.4 ],
 ]);
 
-let joinedData = phys.joinArrays( [data0, data1, data2, data3] );
-let p = phys.createDataPoint(2.8, 0.8, 'Some text');
-let d = phys.joinDataTables( [joinedData, p, data4 ] );
+let joinedData = PhysCharts.joinArrays( [data0, data1, data2, data3] );
+let p = PhysCharts.createDataPoint(2.8, 0.8, 'Some text');
+let d = PhysCharts.joinDataTables( [joinedData, p, data4 ] );
 
 var options = {
   vAxis: {title: 'distance (m)'},
@@ -62,178 +60,9 @@ chart.draw(d, options);
 chart;
 
 </script>
-        
-    <script>
-      let errorOutput = document.getElementById('errorOutput');
-      let chartOutput = document.getElementById('chartOutput');
-      let base64 = "";
 
-
-      loadCode('codeSnippet', 'codeEditor');
-      
-      google.charts.load('current', {'packages':['corechart']});
-      google.charts.setOnLoadCallback( runCode );
-      
-let phys = {
-
-  joinTwoArrays: function( serie1, serie2 ) {
-
-    if( serie1.length == 0 || serie1[0].length < 2 || serie2.length == 0 || serie2[0].length < 2 ) return;
-    let newHeader = serie1[0].concat( serie2[0].slice(1) );
-    
-    //console.log( newHeader );
-    let newSerie = [ newHeader ];
-    for(let i=1; i < serie1.length; ++i ) {
-      let newRow = serie1[i].concat( Array(serie2[0].length-1).fill(null) );
-      //console.log( newRow );
-      newSerie.push( newRow ) ;
-    }
-    
-    for(let i=1; i < serie2.length; ++i ) {
-      let newRow = [ serie2[i][0] ].concat( Array(serie1[0].length-1).fill(null) ).concat( serie2[i].slice(1) ) ;
-      //console.log( newRow );
-      newSerie.push( newRow ) ;
-    }
-    return newSerie;     
-  },
-
-  joinArrays: function( series ) {
-
-    // Apply trivial combinations
-    if( series.length == 0 || !Array.isArray( series[0] ) ) return;
-
-    let joined = series[0];
-    
-    for( let i = 1; i < series.length; ++i ) {
-      if( !Array.isArray( series[i] ) ) return joined;
-    
-      let newJoined = this.joinTwoArrays( joined, series[i] );
-      joined = newJoined;
-    }
-    return joined;
-  },
-  
-  // series is list of DataTables and Arrays 
-  joinDataTables : function( series ) {
-    let gv = google.visualization;
-    
-    // Apply trivial combinations
-    if( series.length == 0 ) return;
-
-    let seriesDT = [];
-    series.forEach( serie => { 
-      let dataTable = Array.isArray(serie) ? gv.arrayToDataTable( serie ) : serie;
-      seriesDT.push( dataTable );
-    });    
-
-    let joined = seriesDT[0];
-    for( let i = 1; i < seriesDT.length; ++i ) {
-
-      let argList1 = [];
-      for( let j=1; j < joined.getNumberOfColumns(); ++j ) {
-        argList1.push( j );
-      }
-      let argList2 = [];
-      for( let j=1; j < seriesDT[i].getNumberOfColumns(); ++j ) {
-        argList2.push( j );
-      }
-      
-      // Unfortunately, gv.data.join inserts duplicate entries when it finds multiple x-values
-      let newJoined = gv.data.join( joined, seriesDT[i], 'full', [[0,0]],argList1,argList2);
-      joined = newJoined;
-    }
-    return joined;
-  },
-  
-  createDataPoint : function( x, y, text ) {
-    let p = new google.visualization.DataTable();
-    p.addColumn('number', 'x');
-    p.addColumn('number', text);
-    p.addColumn({type: 'string', role: 'annotation'});
-    p.addRow([x, y, text]);
-    return p;
-  }
-
-}
-    
-      //runCode('codeEditor');
-      
-      function loadCode(scriptId, textAreaId) {
-        let scriptNode = document.getElementById(scriptId);
-        let textArea = document.getElementById(textAreaId);
-        if (scriptNode.type !== 'text/code-snippet') {
-            throw Error('Unknown code snippet type');
-        }
-        textArea.value = scriptNode.text.replace(/^\n/, '');
-      };
-
-
-      
-      function runCode() {
-        try {
-            clearError();
-            let code = document.getElementById('codeEditor').value;
-            let chart = eval(code);
-
-            //chartPNG.innerHTML = '<img src="' + chart.getImageURI() + '">';
-            base64 = chart.getImageURI();
-          
-        } catch (err) {
-            printError(err);
-        }
-      }
-      
-    function clearError() {
-        errorOutput.innerHTML = '';
-    };
-
-    function printError(err) {
-        errorOutput.innerHTML = err;
-    };
-
-      
-    document.getElementById('save-svg').addEventListener('click', function () {
-
-      //get svg element.
-      var svg = chartOutput.getElementsByTagName('svg')[0];
-
-      //get svg source.
-      var serializer = new XMLSerializer();
-      var source = serializer.serializeToString(svg);
-
-      //add name spaces.
-      if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
-        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-      }
-      if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
-        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-      }
-
-      //add xml declaration
-      source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
-
-      //convert svg source to URI data scheme.
-      var url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(source);
-
-      downloadURL( url, "chart.svg" );
-      
-    });
-
-      
-  document.getElementById('save-png').addEventListener('click', function () {
-    downloadURL( base64, "chart.png" );
-  });
-
-  function downloadURL( url, fileName ) {
-    var link = document.createElement("a");
-    document.body.appendChild(link); // for Firefox
-    link.setAttribute("href", url);
-    link.setAttribute("download", fileName );
-    link.click();
-    document.body.removeChild(link);
-  }
-      
-    </script>
+    <script src="scripts/physcharts.js"></script>
+    <script src="scripts/charts.js"></script>
 
 
 </body>
