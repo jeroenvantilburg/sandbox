@@ -76,7 +76,18 @@ let PhysCharts = {
     p.addColumn({type: 'string', role: 'annotation'});
     p.addRow([x, y, text]);
     return p;
-  }
+  },
 
+  fillArrayFromFunction : function( fun, serieName = "y", xStart = 0.0, xRange=1.0, nPoints = 50 ) {
+    let data = [['x', serieName]];
+    let xStep = xRange / (nPoints-1);
+    for( let i=0; i<nPoints; ++i ) {
+      let x = xStart + i*xStep;
+      data.push( [ x , fun( x ) ] );
+    }
+    return data;
+  },
+
+  
 }
 

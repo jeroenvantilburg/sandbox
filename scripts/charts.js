@@ -8,32 +8,65 @@
        Global variables are defined here
      =========================================== */
   
-  let base64 = "";
+  //let base64 = "";
 
-  loadCode('codeSnippet', 'codeEditor');
-      
-  google.charts.load('current', {'packages':['corechart']});
-  google.charts.setOnLoadCallback( runCode );
+  //loadCode('codeSnippet', 'codeEditor');
+  
 
+  $(document).ready(function() {
+    loadScript();
+    
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback( runCode );
+  }); 
+
+  function loadScript( url = "demos/combochart.js" ) {
+    // Get the file using jQuery get method
+    $.get(url, function( code ) { 
+      $("#codeEditor").val(code);
+    });
+  }
+  
+  // Event listener for uploading files
+  $("#fileinput").change(function() {
+    let files = this.files;
+    // Use createObjectURL, this should address any CORS issues.
+    let filePath = URL.createObjectURL(files[0]);
+    loadScript(filePath);
+
+    // Reset the file input such that it always triggers next change
+    this.value = '';
+  });
+
+  $("#download").click( function(){
+    var filename = prompt("Download as...", "charts.js");
+    if (filename != null && filename != "") {
+      console.log("filename="+filename);
+      let url = 'data:text/plain;charset=utf-8,' + encodeURIComponent( $("#codeEditor").val() ) ;
+      console.log(url);
+      downloadURL( url, filename );
+    }
+  });
+
+  
   $("#runCode").click( runCode );
       
-  function loadCode(scriptId, textAreaId) {    
+  /*function loadCode(scriptId, textAreaId) {    
     let scriptNode = document.getElementById(scriptId);
     let textArea = document.getElementById(textAreaId);
     if (scriptNode.type !== 'text/code-snippet') {
       throw Error('Unknown code snippet type');
     }
-    console.log("tot hier");
-    console.log(textArea);
     textArea.value = scriptNode.text.replace(/^\n/, '');
-  };
+  };*/
     
   function runCode() {
     try {
       clearError();
       let code = document.getElementById('codeEditor').value;
-      let chart = eval(code);
-      base64 = chart.getImageURI();      
+      //let chart = 
+      eval(code);
+      //base64 = chart.getImageURI();      
     } catch (err) {
       printError(err);
     }    
@@ -73,9 +106,9 @@
     downloadURL( url, "chart.svg" );    
   });
       
-  document.getElementById('save-png').addEventListener('click', function () {
+  /*document.getElementById('save-png').addEventListener('click', function () {
     downloadURL( base64, "chart.png" );
-  });
+  });*/
 
   function downloadURL( url, fileName ) {
     var link = document.createElement("a");
@@ -85,6 +118,7 @@
     link.click();
     document.body.removeChild(link);
   }
+  
       
 })();
 
