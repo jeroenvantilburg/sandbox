@@ -24,7 +24,7 @@
 let gv = google.visualization;
 
 let data0 = [['x','y0'],[1,2],[1,2.5], [2,2.1], [2,2.9], [3,3.2]  ];
-let data1 = [['x','y1'],[1,2.4],[2,2.9] ];
+let data1 = [['x','y1'],[1,5.1],[2,5.5] ];
 let data2 = [['x','y2'],[1.5,1.8] ];
 let data3 = [['x','y3'],[0.5,1.5],[1,1.4],[1.5,4.0],[2.0,5.0],[3.0,4.5],[3.5,1.0] ];
 let data4 = gv.arrayToDataTable([
@@ -37,8 +37,9 @@ let data4 = gv.arrayToDataTable([
  [ 4.4 , null, 1.4 ],
 ]);
 
+let joinedData = phys.joinArrays( [data0, data1, data2, data3] );
 let p = phys.createDataPoint(2.8, 0.8, 'Some text');
-let d = phys.combineSeries( [data0, data1, data2, data3, p, data4 ] );
+let d = phys.joinDataTables( [joinedData, p, data4 ] );
 
 var options = {
   vAxis: {title: 'distance (m)'},
@@ -74,16 +75,57 @@ chart;
       google.charts.setOnLoadCallback( runCode );
       
 let phys = {
+
+  joinTwoArrays: function( serie1, serie2 ) {
+
+    if( serie1.length == 0 || serie1[0].length < 2 || serie2.length == 0 || serie2[0].length < 2 ) return;
+    let newHeader = serie1[0].concat( serie2[0].slice(1) );
+    
+    //console.log( newHeader );
+    let newSerie = [ newHeader ];
+    for(let i=1; i < serie1.length; ++i ) {
+      let newRow = serie1[i].concat( Array(serie2[0].length-1).fill(null) );
+      //console.log( newRow );
+      newSerie.push( newRow ) ;
+    }
+    
+    for(let i=1; i < serie2.length; ++i ) {
+      let newRow = [ serie2[i][0] ].concat( Array(serie1[0].length-1).fill(null) ).concat( serie2[i].slice(1) ) ;
+      //console.log( newRow );
+      newSerie.push( newRow ) ;
+    }
+    return newSerie;     
+  },
+
+  joinArrays: function( series ) {
+
+    // Apply trivial combinations
+    if( series.length == 0 || !Array.isArray( series[0] ) ) return;
+
+    let joined = series[0];
+    
+    for( let i = 1; i < series.length; ++i ) {
+      if( !Array.isArray( series[i] ) ) return joined;
+    
+      let newJoined = this.joinTwoArrays( joined, series[i] );
+      joined = newJoined;
+    }
+    return joined;
+  },
   
-  combineSeries : function( series ) {
+  // series is list of DataTables and Arrays 
+  joinDataTables : function( series ) {
     let gv = google.visualization;
+    
+    // Apply trivial combinations
+    if( series.length == 0 ) return;
 
     let seriesDT = [];
     series.forEach( serie => { 
       let dataTable = Array.isArray(serie) ? gv.arrayToDataTable( serie ) : serie;
       seriesDT.push( dataTable );
-    });
-    if( seriesDT.length < 2 ) return;
+    });    
+
     let joined = seriesDT[0];
     for( let i = 1; i < seriesDT.length; ++i ) {
 
@@ -95,7 +137,8 @@ let phys = {
       for( let j=1; j < seriesDT[i].getNumberOfColumns(); ++j ) {
         argList2.push( j );
       }
-
+      
+      // Unfortunately, gv.data.join inserts duplicate entries when it finds multiple x-values
       let newJoined = gv.data.join( joined, seriesDT[i], 'full', [[0,0]],argList1,argList2);
       joined = newJoined;
     }
