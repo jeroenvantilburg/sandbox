@@ -27,27 +27,26 @@ let data0 = [['x','y0'],[1,2],[1,2.5], [2,2.1], [2,2.9], [3,3.2]  ];
 let data1 = [['x','y1'],[1,2.4],[2,2.9] ];
 let data2 = [['x','y2'],[1.5,1.8] ];
 let data3 = [['x','y3'],[0.5,1.5],[1,1.4],[1.5,4.0],[2.0,5.0],[3.0,4.5],[3.5,1.0] ];
-
-let p = phys.createDataPoint(2.8, 0.8, 'Some text');
-let d = phys.combineSeries( [data0, data1, data2, data3, p ] );
-
-var data = gv.arrayToDataTable([
- ['x', 'y0', 'y1', 'y2', 'y3'],
- [ 1 , 2, 3, 4, null ],
- [ 1 , 2.5, 3.1, null, 4.5 ],
- [ 2 , 2.5, 3.4, 2.2, 5 ],
- [ 2 , 2.5, 3.4, null, null ],
- [ 3 , 1.75, 3.4, 3.9, 0.5 ],
-
+let data4 = gv.arrayToDataTable([
+ ['x', 'v0', 'v1'],
+ [ 0.5 , 5.2, 4.5 ],
+ [ 0.5 , 5.4, null ],
+ [ 2.5 , 5.0, 3.4 ],
+ [ 2.5 , 5.5, null ],
+ [ 3.8 , 5.75, 3.4 ],
+ [ 4.4 , null, 1.4 ],
 ]);
 
+let p = phys.createDataPoint(2.8, 0.8, 'Some text');
+let d = phys.combineSeries( [data0, data1, data2, data3, p, data4 ] );
+
 var options = {
-  title : 'My title',
   vAxis: {title: 'distance (m)'},
   hAxis: {title: '\u0394time (s)', minValue: 0, maxValue: 4},
   seriesType: 'scatter',
   series: {1: {type: 'line'}, 3: {type: 'line', curveType: 'function'}, 
-               4: {pointSize: 0, visibleInLegend: false, annotations: { stemColor : 'none' }} },
+               4: {pointSize: 0, visibleInLegend: false, annotations: { stemColor : 'none' }},
+               6: {type:'line', curveType: 'function'} },
   interpolateNulls: true,
 };
 
