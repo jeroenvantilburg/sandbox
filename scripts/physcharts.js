@@ -88,6 +88,22 @@ let PhysCharts = {
     return data;
   },
 
+  applyFormatting : function( chart ) {
+        google.visualization.events.addListener(chart, 'ready', function () {
+        console.log("tot hier");
+        $.each($('text'), function (index, label) {
+          console.log("tot hier " + index);
+
+          var labelText = $(label).text();
+          if (labelText.match(/_|\^/)) {
+				  	labelText = labelText.replace(/_([^\{])|_\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="sub">$1$2</tspan>')
+				  	labelText = labelText.replace(/\^([^\{])|\^\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="super">$1$2</tspan>')
+            $(label).html(labelText);
+          }
+        });
+      });
+  },
   
 }
+
 

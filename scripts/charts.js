@@ -20,6 +20,9 @@
     google.charts.setOnLoadCallback( runCode );
   }); 
 
+
+
+  
   function loadScript( url = "demos/combochart.js" ) {
     // Get the file using jQuery get method
     $.get(url, function( code ) { 
@@ -43,7 +46,7 @@
     if (filename != null && filename != "") {
       console.log("filename="+filename);
       let url = 'data:text/plain;charset=utf-8,' + encodeURIComponent( $("#codeEditor").val() ) ;
-      console.log(url);
+      //console.log(url);
       downloadURL( url, filename );
     }
   });
@@ -65,7 +68,26 @@
       clearError();
       let code = document.getElementById('codeEditor').value;
       //let chart = 
-      eval(code);
+      window.eval(code);
+      
+      
+      google.visualization.events.addListener(chart, 'ready', function () {
+        console.log("tot hier");
+        $.each($('text'), function (index, label) {
+          console.log("tot hier " + index);
+
+          var labelText = $(label).text();
+          if (labelText.match(/_|\^/)) {
+				  	labelText = labelText.replace(/_([^\{])|_\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="sub">$1$2</tspan>')
+				  	labelText = labelText.replace(/\^([^\{])|\^\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="super">$1$2</tspan>')
+            $(label).html(labelText);
+          }
+        });
+      });
+
+
+      
+      //console.log(window);
       //base64 = chart.getImageURI();      
     } catch (err) {
       printError(err);

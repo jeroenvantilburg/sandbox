@@ -25,7 +25,7 @@ let p = PhysCharts.createDataPoint(2.8, 0.8, 'Some text');
 let d = PhysCharts.joinDataTables( [joinedData, p, data4 ] );
 
 var options = {
-  vAxis: {title: 'distance (m)'},
+  vAxis: {title: 'v (m s^{-1})'},
   hAxis: {title: '\u0394time (s)', minValue: 0, maxValue: 4},
   seriesType: 'scatter',
   series: {1: {type: 'line'}, 
@@ -43,4 +43,5 @@ options.hAxis.gridlines= {count: 20, multiple: 0.5};
 
 // Always needed
 let chart = new gv.ComboChart( chartOutput );
+PhysCharts.applyFormatting( chart );
 chart.draw(d, options);
