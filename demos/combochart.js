@@ -26,7 +26,7 @@ let d = PhysCharts.joinDataTables( [joinedData, p, data4 ] );
 
 var options = {
   vAxis: {title: 'v (m s^{-1})'},
-  hAxis: {title: '\u0394time (s)', minValue: 0, maxValue: 4},
+  hAxis: {title: '\\Delta time (\\it{s})', minValue: 0, maxValue: 4},
   seriesType: 'scatter',
   series: {1: {type: 'line'}, 
            2: {type: 'line', curveType: 'function'},     

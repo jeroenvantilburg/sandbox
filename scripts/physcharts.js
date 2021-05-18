@@ -89,17 +89,57 @@ let PhysCharts = {
   },
 
   applyFormatting : function( chart ) {
+    
+    // Attempts to find a replacement for a value in one
+    // of our objects. If none exists, it returns the
+    // original object
+    var attemptReplace = function(obj, key) {
+      return obj[key] !== undefined ? obj[key] : key;
+    };
+    // Loops through our string, converting all of the symbols
+    // that it finds. It also handles grouped symbols, as in:
+    // \frak{ABC}
+    function applyModifier(text, modifier, obj) {
+      let n = text.indexOf(modifier);
+      if( n === -1 ) return text;
+      
+      let newText = "", i=0;
+      while( n !== -1 ) {
+        newText += text.substring(i,n);
+
+        for (i = n + modifier.length + 2; i < text.length; ++i) {
+          if( text[i] === "}" ) break;
+          newText += attemptReplace(obj, text[i]);
+        }
+      
+        n = text.indexOf(modifier,i);
+      }
+      console.log(newText);
+      return newText;
+    }
+
+    
         google.visualization.events.addListener(chart, 'ready', function () {
-        console.log("tot hier");
+        //console.log("tot hier");
         $.each($('text'), function (index, label) {
-          console.log("tot hier " + index);
+          //console.log("tot hier " + index);
 
           var labelText = $(label).text();
+          Object.keys(unicode.symbols).forEach(function(key) {
+            var val = unicode.symbols[key];
+            labelText = labelText.replace(key, val);
+          });
+          labelText = applyModifier(labelText, '\\bf', unicode.textbf);
+          labelText = applyModifier(labelText, '\\it', unicode.textit);
+          //console.log( labelText );
+
           if (labelText.match(/_|\^/)) {
 				  	labelText = labelText.replace(/_([^\{])|_\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="sub">$1$2</tspan>')
 				  	labelText = labelText.replace(/\^([^\{])|\^\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="super">$1$2</tspan>')
             $(label).html(labelText);
           }
+				  $(label).html( labelText );
+           
         });
       });
   },
