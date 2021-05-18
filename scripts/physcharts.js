@@ -116,34 +116,30 @@ let PhysCharts = {
         n = text.indexOf(modifier,i);
       }
       newText += text.substring(i,text.length);
-      console.log(newText);
+      //console.log(newText);
       return newText;
     }
 
     
-        google.visualization.events.addListener(chart, 'ready', function () {
-        //console.log("tot hier");
-        $.each($('text'), function (index, label) {
-          //console.log("tot hier " + index);
-
-          var labelText = $(label).text();
-          Object.keys(unicode.symbols).forEach(function(key) {
-            var val = unicode.symbols[key];
-            labelText = labelText.replace(key, val);
-          });
-          labelText = applyModifier(labelText, '\\bf', unicode.textbf);
-          labelText = applyModifier(labelText, '\\it', unicode.textit);
-          //console.log( labelText );
-
-          if (labelText.match(/_|\^/)) {
-				  	labelText = labelText.replace(/_([^\{])|_\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="sub">$1$2</tspan>')
-				  	labelText = labelText.replace(/\^([^\{])|\^\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="super">$1$2</tspan>')
-            $(label).html(labelText);
-          }
-				  $(label).html( labelText );
-           
+    google.visualization.events.addListener(chart, 'ready', function () {
+      $.each($('text'), function (index, label) {
+        var labelText = $(label).text();
+        Object.keys(unicode.symbols).forEach(function(key) {
+          var val = unicode.symbols[key];
+          labelText = labelText.replace("{"+key+"}", val);
+          labelText = labelText.replace(key, val);
         });
+        labelText = applyModifier(labelText, '\\bf', unicode.textbf);
+        labelText = applyModifier(labelText, '\\it', unicode.textit);
+
+        if (labelText.match(/_|\^/)) {
+          labelText = labelText.replace(/_([^\{])|_\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="sub">$1$2</tspan>');
+          labelText = labelText.replace(/\^([^\{])|\^\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="super">$1$2</tspan>');
+          $(label).html(labelText);  
+        }
+        $(label).html( labelText );
       });
+    });
   },
   
 }

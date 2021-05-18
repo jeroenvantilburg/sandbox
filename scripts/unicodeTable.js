@@ -161,6 +161,7 @@ symbols : {
   "\\multimap": "⊸",
   "\\mp": "∓",
   "\\models": "⊨",
+  "\\minus": "−",
   "\\mid": "∣",
   "\\mho": "℧",
   "\\measuredangle": "∡",
