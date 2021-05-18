@@ -1,7 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>PhysCharts</title>
+  <title>PhysCharts</title>  
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/codemirror.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/codemirror.min.css">
+  <style>
+  .CodeMirror {
+    border: 1px solid #eee;
+    /*height: auto;*/
+    font-size: 12px;
+  }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/mode/javascript/javascript.min.js"></script>
+
+  
   <body>
     <button id="runCode">Run</button>
     <input id="save-svg" type="button" value="Save as SVG"/>
@@ -12,8 +25,9 @@
     
     <br/>
     <div id="errorOutput"></div>
-    
-    <textarea rows="20" cols="80" id="codeEditor"></textarea>
+        
+    <!--textarea rows="20" cols="80" id="codeEditor"></textarea-->
+    <div id="codeEditor"></div>
     
     <div id="chartOutput" style="width: 600px; height: 400px;"></div>
 

@@ -12,8 +12,19 @@
 
   //loadCode('codeSnippet', 'codeEditor');
   
+  var myCodeMirror = CodeMirror(document.getElementById("codeEditor"), {
+    mode:  "javascript",
+    lineNumbers: true
+  } );
+  /*let myCodeMirror = CodeMirror.fromTextArea( document.getElementById("codeEditor"), {
+                                             mode:  "javascript",
+    lineNumbers: true
+  } );*/
+  //myCodeMirror.setSize(300, 500);  
+
 
   $(document).ready(function() {
+    
     loadScript();
     
     google.charts.load('current', {'packages':['corechart']});
@@ -26,7 +37,8 @@
   function loadScript( url = "demos/combochart.js" ) {
     // Get the file using jQuery get method
     $.get(url, function( code ) { 
-      $("#codeEditor").val(code);
+      //$("#codeEditor").val(code);
+      myCodeMirror.setValue( code );
     });
   }
   
@@ -45,7 +57,7 @@
     var filename = prompt("Download as...", "charts.js");
     if (filename != null && filename != "") {
       console.log("filename="+filename);
-      let url = 'data:text/plain;charset=utf-8,' + encodeURIComponent( $("#codeEditor").val() ) ;
+      let url = 'data:text/plain;charset=utf-8,' + encodeURIComponent( myCodeMirror.getValue() ) ;
       //console.log(url);
       downloadURL( url, filename );
     }
@@ -77,7 +89,8 @@
   });*/
 
   function runCode() {
-    let code = $('#codeEditor').val();
+    //let code = $('#codeEditor').val();
+    let code = myCodeMirror.getValue();
     clearError();
     
     try {
