@@ -107,13 +107,15 @@ let PhysCharts = {
       while( n !== -1 ) {
         newText += text.substring(i,n);
 
-        for (i = n + modifier.length + 2; i < text.length; ++i) {
-          if( text[i] === "}" ) break;
+        for (i = n + modifier.length + 1; i < text.length; ++i) {
+          if( text[i] === "}" ) {++i; break;}
+          //console.log(text[i]);
           newText += attemptReplace(obj, text[i]);
         }
       
         n = text.indexOf(modifier,i);
       }
+      newText += text.substring(i,text.length);
       console.log(newText);
       return newText;
     }
