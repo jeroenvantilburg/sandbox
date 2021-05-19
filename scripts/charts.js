@@ -133,9 +133,11 @@
   };
 
       
-  document.getElementById('save-svg').addEventListener('click', function () {
+  //document.getElementById('save-svg').addEventListener('click', function () {
+  $('#save-svg').on('click', function () {
     //get svg element.
-    var svg = $("#chartOutput").getElementsByTagName('svg')[0];
+    //var svg = document.getElementById('chartOutput').getElementsByTagName('svg')[0];
+    let svg = $("#chartOutput svg").get(0);
 
     //get svg source.
     var serializer = new XMLSerializer();
