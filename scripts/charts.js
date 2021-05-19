@@ -63,6 +63,28 @@
     }
   });
 
+  // Remove focus after enter for all input text elements
+  let focusedElement;
+  function blurOnEnter(e){ 
+    if(e.keyCode===13){ 
+      e.target.blur();
+      focusedElement = null;
+    } 
+  }
+  $("input[type=text]").on("keydown", blurOnEnter );
+  $("input[type=number]").on("keydown", blurOnEnter );
+
+  $("#width").on("change", () => {
+    $("#chartOutput").width( $("#width").val() );
+    runCode();
+  });
+
+  $("#height").on("change", () => {
+    $("#chartOutput").height( $("#height").val() );
+    runCode();
+  });
+
+  
   
   $("#runCode").click( runCode );
       
@@ -97,7 +119,7 @@
       $("<script />").html("{"+code+"}").appendTo("head").remove();
        //  eval(code);
     } catch (e) {
-      printError( e );
+      printError( e ); // Maybe this try catch is not needed anymore...
     }
 
   }
