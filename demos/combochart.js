@@ -25,8 +25,8 @@ let p = PhysCharts.createDataPoint(2.8, 0.8, 'Some text');
 let d = PhysCharts.joinDataTables( [joinedData, p, data4 ] );
 
 var options = {
-  vAxis: {title: 'v (m{\\cdot}s^{\\minus1})'},
-  hAxis: {title: '\\Delta time (\\it{s})', minValue: 0, maxValue: 4},
+  vAxis: {title: '\\alignTop v (m{\\cdot}s^{\\minus1})'},
+  hAxis: {title: '\\alignRight \\Delta time (\\it{s})', minValue: 0, maxValue: 4},
   seriesType: 'scatter',
   series: {1: {type: 'line'}, 
            2: {type: 'line', curveType: 'function'},     
@@ -34,12 +34,14 @@ var options = {
            4: {pointSize: 0, visibleInLegend: false, annotations: { stemColor : 'none' }},
            6: {type:'line', curveType: 'function'} },
   interpolateNulls: true,
+  chartArea: {left:60,top:20,width:'70%',height:'85%'}
 };
 
-options.hAxis.titleTextStyle = {italic: false };
-options.vAxis.titleTextStyle = {italic: false };
-options.vAxis.gridlines= {count: 50, multiple: 1};
-options.hAxis.gridlines= {count: 20, multiple: 0.5};
+options.fontSize = 14;
+options.hAxis.titleTextStyle = {italic: false, fontSize: 16 };
+options.vAxis.titleTextStyle = {italic: false, fontSize: 16 };
+options.vAxis.gridlines= {count: 20, multiple: 1};
+options.hAxis.gridlines= {count: 40, multiple: 0.5};
 
 // Always needed
 let chart = new gv.ComboChart( chartOutput );

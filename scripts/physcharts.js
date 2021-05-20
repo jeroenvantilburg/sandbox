@@ -135,8 +135,37 @@ let PhysCharts = {
         if (labelText.match(/_|\^/)) {
           labelText = labelText.replace(/_([^\{])|_\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="sub">$1$2</tspan>');
           labelText = labelText.replace(/\^([^\{])|\^\{([^\}]*)\}/g, '<tspan style="font-size: smaller;" baseline-shift="super">$1$2</tspan>');
-          $(label).html(labelText);  
+          //$(label).html(labelText);  
         }
+        
+        // Align x-axis
+        if( labelText.indexOf("\\alignRight") !== -1 ) {
+          labelText = labelText.replace("\\alignRight", ""); 
+          var bb = chart.getChartLayoutInterface().getChartAreaBoundingBox();        
+          $(label).attr("text-anchor", "end");
+          $(label).attr("x", bb.left+bb.width );
+        }
+        
+        // Align y-axis
+        if( labelText.indexOf("\\alignTop") !== -1 ) {
+          labelText = labelText.replace("\\alignTop", ""); 
+          var bb = chart.getChartLayoutInterface().getChartAreaBoundingBox();        
+          $(label).attr("text-anchor", "end");
+          $(label).attr("y", bb.top );
+          $(label).attr("transform", $(label).attr("transform").replace(/(\d+)(?!.*\d)/, bb.top ));
+        }
+
+        // Align y-axis horizontally
+        if( labelText.indexOf("\\alignHor") !== -1 ) {
+          labelText = labelText.replace("\\alignHor", ""); 
+          labelText = labelText.replace("\\newLine", "\u0021"); // new line does not work yet
+          var bb = chart.getChartLayoutInterface().getChartAreaBoundingBox();        
+          $(label).attr("text-anchor", "start");
+          $(label).attr("x", 0 );
+          $(label).attr("y", bb.top );
+          $(label).attr("transform", "");
+        }
+
         $(label).html( labelText );
       });
     });
