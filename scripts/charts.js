@@ -27,7 +27,8 @@
     
     loadScript();
     
-    google.charts.load('current', {'packages':['corechart']});
+    // set to dutch to get comma as decimal separator
+    google.charts.load('current', {'packages':['corechart'] , 'language': 'nl'});
     google.charts.setOnLoadCallback( runCode );
   }); 
 
