@@ -62,27 +62,6 @@ from js import document
     link.click();
     document.body.removeChild(link);
   }
-
-  // Remove focus after enter for all input text elements
-  let focusedElement;
-  function blurOnEnter(e){ 
-    if(e.keyCode===13){ 
-      e.target.blur();
-      focusedElement = null;
-    } 
-  }
-  $("input[type=text]").on("keydown", blurOnEnter );
-  $("input[type=number]").on("keydown", blurOnEnter );
-
-  $("#width").on("change", () => {
-    $("#chartOutput").width( $("#width").val() );
-    //runCode();
-  });
-
-  $("#height").on("change", () => {
-    $("#chartOutput").height( $("#height").val() );
-    //runCode();
-  });
     
   const output = document.getElementById("output");
      
