@@ -16,12 +16,56 @@ from matplotlib.backends import backend_agg
 from js import document
 `;
 
-  var myCodeMirror = CodeMirror(document.getElementById("codeEditor"), {
+  // Create a CodeMirror instance
+  let myCodeMirror = CodeMirror(document.getElementById("codeEditor"), {
     mode:  "python",
     lineNumbers: true
   } );
 
   $("#runCode").click( evaluatePython );
+
+  // Read the xml file from the hash of the web address
+  function readFileFromHash() {
+    let pyFile = window.location.hash.substr(1);
+  
+    if( pyFile == "") { // If hash is empty read the default file
+      pyFile = "demos/sine.py";
+    }
+    else if ( pyFile.includes("https") ) {
+      $.get(pyFile, function(data) {
+        console.log("Trying to load external python file");
+        console.log(pyFile);
+        console.log(data);
+      });
+    } else {
+      pyFile = "demos/"+pyFile;
+    }
+  
+    // Load the python file
+    loadScript( pyFile );  
+  }
+
+  // Trigger reload when hash has changed
+  $(window).on('hashchange', readFileFromHash );
+
+  // Call function from select menu
+  function loadHash( hash ) {
+    // Force a reload when hash did not change
+    if( hash == window.location.hash ) {
+      readFileFromHash();
+    } else { // Hash will change: will trigger a reload
+      window.location = hash;
+    }
+  }
+
+  $(".box-item").on("click", function() {
+    //console.log("id = " + $(this).attr('href') );
+    //console.log($(this));
+    loadHash( $(this).attr('href') );
+    $(".close").click();
+  });
+
+
 
   function loadScript( url = "demos/sine.py" ) {
     // Get the file using jQuery get method
@@ -31,7 +75,8 @@ from js import document
   }
 
   // Load the demo script
-  loadScript();
+  readFileFromHash();
+  //loadScript();
 
   // Event listener for uploading files
   $("#fileinput").change(function() {
@@ -63,33 +108,10 @@ from js import document
     document.body.removeChild(link);
   }
     
+
+  // Initialize Pyodide
   const output = document.getElementById("output");
-     
-  let lastID;
-
-  function addToOutput(s) {
-    // Use the built-in show() method
-    pyodide.runPython("f = plt.gcf()");
-    pyodide.runPython("f.canvas.create_root_element = create_root_element1.__get__(f.canvas, f.canvas.__class__)");
-    pyodide.runPython("f.canvas.show()");
-    pyodide.runPython("lastID = f.canvas._id");
-
-    // Store the id of the output canvas
-    lastID = pyodide.globals.get('lastID')
-
-    var stdout = pyodide.runPython("sys.stdout.getvalue()")
-    pyodide.runPython("sys.stdout = io.StringIO()"); // clear stdout
-    output.value += stdout;
-      
-    if( s ) output.value += s + '\n';//'>>>' + code.value + '\n' + s + '\n';
-
-    // Move to last line
-    output.scrollTop = output.scrollHeight;
-
-  }
-
   output.value = 'Initializing...\n';
-  // init Pyodide
   async function main(){
     await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/' });
     await pyodide.runPythonAsync( startupCode );
@@ -98,21 +120,71 @@ from js import document
   }
   let pyodideReadyPromise = main();
 
+  // Evaluate the python user code
   async function evaluatePython() {
+    await pyodideReadyPromise;
+    try {
+      let output = await pyodide.runPythonAsync( myCodeMirror.getValue() );
+      addToOutput(output);
+      showFigure();
+    } catch(err) {
+      addToOutput(err);
+    }
+  }
 
+  // Print the output from the Python user code
+  function addToOutput(s) {
+    // Print stdout
+    var stdout = pyodide.runPython("sys.stdout.getvalue()")
+    pyodide.runPython("sys.stdout = io.StringIO()"); // clear previous stdout
+    output.value += stdout;
+    
+    // Print output value (unless it is undefined)
+    if( s ) output.value += s + '\n';
+
+    // Move to last line
+    output.scrollTop = output.scrollHeight;
+  }
+
+  // Draw the matplotlib figure in the HTML DOM
+  let lastID;
+  function showFigure() {
     // Remove the previous div first
     if( lastID ) {
       document.getElementById(lastID).remove();
     }
 
-    await pyodideReadyPromise;
-    try {
-      let output = await pyodide.runPythonAsync( myCodeMirror.getValue() );
-      addToOutput(output);
-    } catch(err) {
-      addToOutput(err);
-    }
+    // Use the built-in show() method
+    pyodide.runPython("f = plt.gcf()");
+    pyodide.runPython("f.canvas.create_root_element = create_root_element1.__get__(f.canvas, f.canvas.__class__)");
+    pyodide.runPython("f.canvas.show()");
+    pyodide.runPython("lastID = f.canvas._id");
+
+    // Store the id of the output canvas
+    lastID = pyodide.globals.get('lastID')
   }
+
+
+  /* ============= MODAL SECTION =================
+     Define functions for the modal boxes.
+     Shows and hides the modal boxes.
+     =========================================== */    
+
+  // Event listener for the different modal boxes
+  $("#gallery").click( evt => { showModal("galleryModal"); });
+  /*$("#showAbout").click( evt => { showModal("aboutModal"); } );
+  $("#showHelp").click( evt => { showModal("helpModal");} );*/
+  
+  // Showing modal box
+  function showModal(name) { $("#"+name).toggle(); }
+
+  // When the user clicks on <span> (x), close the current modal
+  $(".close").on("click", function() { $(this).parent().parent().toggle(); });
+  
+  // When the user clicks anywhere outside of the modal, close it
+  $(window).on("click", function(event) {
+    if( event.target.className === "modal" ) event.target.style.display = "none";
+  });
 
           
 })();

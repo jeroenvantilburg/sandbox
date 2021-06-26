@@ -13,6 +13,79 @@
   #wrapper{ width: 100%; display: flex; }
   #codeEditor{ width: 50%; } 
   #pyplotdiv{ width: 50%; }
+
+/* https://www.w3schools.com/howto/howto_css_modals.asp */
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 3; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto; /* 15% from the top and centered */
+  padding: 10px;
+  max-width: 700px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+}
+
+.modal-small {
+  max-width: 400px;
+}
+
+.modal-large {
+  max-width: initial;
+  height: 90vh;
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  margin-right: 10px;
+  font-size: 2.5em;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Boxes for the Gallery */
+.box-item {
+  background-color: white;
+  float: left;
+  margin: 20px;
+  padding: 10px; 
+  max-width: 200px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.boxes:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.box-item:hover {
+  cursor: pointer;
+  padding: 9px; 
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.8), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
   </style>
   <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -27,6 +100,7 @@
       <input id="fileinput" type="file" style="display: none;">
       <button id="stupid_hack" onclick="fileinput.click()">Upload script</button>
       <button id="download">Download script</button>
+      <button id="gallery">Gallery</button>
       </p>
     </div>
     <div id="pyplotdiv">
@@ -38,6 +112,26 @@
     Output:
   </div>
   <textarea id='output' style='width: 100%;' rows='10' disabled></textarea>
+
+
+  <div id="galleryModal" class="modal">
+    <div class="modal-content modal-large"> <span class="close">&times;</span>
+    <h1>Plot Gallery</h1>
+    <div class="boxes">
+
+      <div class="box-item" href="#sine.py">
+        <h3>Sine function</h3>
+        <img src="demos/sine.png" width="100%"/>         
+      </div>
+
+      <div class="box-item" href="#simple.py">
+        <h3>Simple plot</h3>
+        <img src="demos/simple.png" width="100%"/>         
+      </div>
+
+    </div>
+  </div>
+
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="scripts/pyodide_demo.js"></script>
