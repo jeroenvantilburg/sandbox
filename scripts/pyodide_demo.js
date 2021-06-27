@@ -28,8 +28,9 @@ from js import document
   function readFileFromHash() {
     let pyFile = window.location.hash.substr(1);
   
-    if( pyFile == "") { // If hash is empty read the default file
-      pyFile = "demos/sine.py";
+    if( pyFile == "") { // If hash is empty show the Gallery
+      showModal("galleryModal");
+      return;
     }
     else if ( pyFile.includes("https") ) {
       $.get(pyFile, function(data) {
@@ -59,8 +60,6 @@ from js import document
   }
 
   $(".box-item").on("click", function() {
-    //console.log("id = " + $(this).attr('href') );
-    //console.log($(this));
     loadHash( $(this).attr('href') );
     $(".close").click();
   });
@@ -76,7 +75,6 @@ from js import document
 
   // Load the demo script
   readFileFromHash();
-  //loadScript();
 
   // Event listener for uploading files
   $("#fileinput").change(function() {
