@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Serial</title>
+</head>
+<body>
+
+  <button id="connect-to-serial">Connect to serial port</button>
+  <button disabled id="get-serial-messages">Get serial messages</button><br/>
+  <textarea readonly rows="30" cols="80" id="receiveText" ></textarea>  
+
+  <script>
+    const connect = document.getElementById('connect-to-serial');
+    const getSerialMessages = document.getElementById('get-serial-messages');
+    let receiveText = document.getElementById("receiveText");
+
+    connect.addEventListener('pointerdown', async () => {
+
+        if ('serial' in navigator) {
+            try {
+                const port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 9600 });
+
+// See https://codelabs.developers.google.com/codelabs/web-serial/#3
+// CODELAB: Add code to read the stream here.
+let decoder = new TextDecoderStream();
+inputDone = port.readable.pipeTo(decoder.writable);
+inputStream = decoder.readable;
+reader = inputStream.getReader();
+
+                //reader = port.readable.getReader();
+                let signals = await port.getSignals();
+                console.log(signals);
+            }
+            catch (err) {
+                console.error('There was an error opening the serial port:', err);
+            }
+        }
+        else {
+            console.error('Web serial doesn\'t seem to be enabled in your browser. Try enabling it by visiting:');
+            console.error('chrome://flags/#enable-experimental-web-platform-features');
+            console.error('opera://flags/#enable-experimental-web-platform-features');
+            console.error('edge://flags/#enable-experimental-web-platform-features');
+        }
+
+      getSerialMessages.removeAttribute('disabled');
+    });
+
+    getSerialMessages.addEventListener('pointerdown', async () => {
+
+console.log("start log")
+
+while (true) {
+  const { value, done } = await reader.read();
+  if (value) {
+    receiveText.value += value; // + '\n';
+    receiveText.scrollTop = receiveText.scrollHeight;
+  }
+  if (done) {
+    console.log('[readLoop] DONE', done);
+    reader.releaseLock();
+    break;
+  }
+}
+
+        /*value = await read();
+        //When recieved something add it to the big textarea
+        receiveText.value += value;
+        //Scroll to the bottom of the text field
+        receiveText.scrollTop = receiveText.scrollHeight;*/
+
+console.log("end log")
+
+    });
+
+/*
+    async function read() {
+        try {
+            const readerData = await reader.read();
+            let decoder = new TextDecoder();
+            return decoder.decode(readerData.value);
+        }
+        catch (err) {
+            const errorMessage = `error reading data: ${err}`;
+            console.error(errorMessage);
+            return errorMessage;
+        }
+    }
+*/
+
+
+  </script>
+</body>
+</html>
+
