@@ -4,94 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Web Serial</title>
+  <link rel="stylesheet" 
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
 
-  <button id="connect-to-serial">Connect to serial port</button>
-  <button disabled id="get-serial-messages">Get serial messages</button><br/>
-  <textarea readonly rows="30" cols="80" id="receiveText" ></textarea>  
+  <button id="connect">Connect to serial port</button>
+  <!--button id="disconnect">Disconnect</button>
+  <button disabled id="start">Start measurement</button>
+  <button disabled id="stop">Stop measurement</button-->
+  <button id="import"><i class="fa fa-upload"></i> Import file</button>
+  <input id="input" type="file" accept="text/plain,text/csv,.csv,.tsv,.txt" hidden><br/>
+  <button id="clear">Clear all data</button><br/>
+  
+  <button id="loglinear">Log/linear</button>
+  Num bins:<input id="nBins" type="number" min="1" value="50" max="1000"></input>
+  Max ampl:<input id="maxAmpl" type="number" min="1" value="200" max="2300"></input>
+  <br/>
 
-  <script>
-    const connect = document.getElementById('connect-to-serial');
-    const getSerialMessages = document.getElementById('get-serial-messages');
-    let receiveText = document.getElementById("receiveText");
+<div>
+  <table id="summaryTable" style="border-spacing: 0;">
+    <tr id="data">
+      <td>Data:</td>
+    </tr>
+    <tr id="nEvents">
+      <td>Number of events:</td>
+    </tr>
+    <tr id="ardtime">
+      <td>Total time:</td>
+    </tr>
+    <tr id="deadtime">
+      <td>Total deadtime:</td>
+    </tr>
+    <tr id="uptime">
+      <td>Total uptime:</td>
+    </tr>
+    <tr id="rate">
+      <td>Total rate:</td>
+    </tr>
+    <tr id="startMeas">
+      <td></td>
+    </tr>
+    <tr id="stopMeas">
+      <td></td>
+    </tr>
+    <tr id="removeMeas">
+      <td></td>
+    </tr>
+  </table>
+  <br/>
+</div>
 
-    connect.addEventListener('pointerdown', async () => {
+  <div id="amplChart" class="row" data-highcharts-chart="4"></div><br/>
+  
+  <textarea readonly rows="15" cols="100" id="receiveText" ></textarea>  
 
-        if ('serial' in navigator) {
-            try {
-                const port = await navigator.serial.requestPort();
-                await port.open({ baudRate: 9600 });
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <!--script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/4.2.6/highcharts.js"></script-->
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<!--script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script-->
 
-// See https://codelabs.developers.google.com/codelabs/web-serial/#3
-// CODELAB: Add code to read the stream here.
-let decoder = new TextDecoderStream();
-inputDone = port.readable.pipeTo(decoder.writable);
-inputStream = decoder.readable;
-reader = inputStream.getReader();
+  <script src="CWreader.js"></script>
 
-                //reader = port.readable.getReader();
-                let signals = await port.getSignals();
-                console.log(signals);
-            }
-            catch (err) {
-                console.error('There was an error opening the serial port:', err);
-            }
-        }
-        else {
-            console.error('Web serial doesn\'t seem to be enabled in your browser. Try enabling it by visiting:');
-            console.error('chrome://flags/#enable-experimental-web-platform-features');
-            console.error('opera://flags/#enable-experimental-web-platform-features');
-            console.error('edge://flags/#enable-experimental-web-platform-features');
-        }
-
-      getSerialMessages.removeAttribute('disabled');
-    });
-
-    getSerialMessages.addEventListener('pointerdown', async () => {
-
-console.log("start log")
-
-while (true) {
-  const { value, done } = await reader.read();
-  if (value) {
-    receiveText.value += value; // + '\n';
-    receiveText.scrollTop = receiveText.scrollHeight;
-  }
-  if (done) {
-    console.log('[readLoop] DONE', done);
-    reader.releaseLock();
-    break;
-  }
-}
-
-        /*value = await read();
-        //When recieved something add it to the big textarea
-        receiveText.value += value;
-        //Scroll to the bottom of the text field
-        receiveText.scrollTop = receiveText.scrollHeight;*/
-
-console.log("end log")
-
-    });
-
-/*
-    async function read() {
-        try {
-            const readerData = await reader.read();
-            let decoder = new TextDecoder();
-            return decoder.decode(readerData.value);
-        }
-        catch (err) {
-            const errorMessage = `error reading data: ${err}`;
-            console.error(errorMessage);
-            return errorMessage;
-        }
-    }
-*/
-
-
-  </script>
 </body>
 </html>
 
