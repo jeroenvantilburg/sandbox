@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Stroboscope example</title>
+</head>
+<body>
+<h2>Stroboscope xample</h2>
+<div class="control"><button id="startAndStop" disabled>Start</button></div>
+<div>
+    <table cellpadding="0" cellspacing="0" width="0" border="0">
+    <tr>
+        <td>
+            <video id="videoInput" muted style="display:none;"></video>
+            <canvas id="canvasVideo"></canvas>
+        </td>
+        <td>
+            <canvas id="canvasOutput"></canvas>
+        </td>
+        <td>
+            <canvas id="canvasOutput2"></canvas>
+        </td>
+    </tr>
+    </table>
+</div>
+
+<script async src="https://docs.opencv.org/4.5.2/opencv.js" id="opencv"></script>  
+
+<script type="text/javascript">
+
+let streaming = false;
+let video = document.getElementById('videoInput');
+let canvasVideo     = document.getElementById('canvasVideo');
+let canvasVideoCtx  = canvasVideo.getContext('2d');
+
+
+let startAndStop = document.getElementById('startAndStop');
+let canvasOutput = document.getElementById('canvasOutput');
+let canvasContext = canvasOutput.getContext('2d');
+
+startAndStop.addEventListener('click', () => {
+    if (!streaming) {
+      onVideoStarted();
+    } else {
+        onVideoStopped();
+    }
+});
+
+function onVideoStarted() {
+      streaming = true;
+      video.height = video.videoHeight;
+      video.width = video.videoWidth;
+      canvasVideo.width = video.videoWidth;
+      canvasVideo.height = video.videoHeight;
+      startAndStop.innerText = 'Stop';
+      loadRest();    
+}
+
+function onVideoStopped() {
+    streaming = false;
+    //video.currentTime = 0;
+    //canvasContext.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
+    startAndStop.innerText = 'Start';
+}
+
+document.getElementById('opencv').onload = function () {
+  console.log("OpenCV is ready");
+    video.addEventListener('canplay', () => {
+        startAndStop.removeAttribute('disabled');
+    });
+  video.src="demo_bounching_ball.mp4"
+  if( window.cv instanceof Promise ) {
+    console.log("cv returns a promise");
+    window.cv.then((target) => {
+      window.cv = target;
+      console.log( target );
+    })
+  }
+  
+};
+
+function loadRest() {
+
+//let cap = new cv.VideoCapture(video);
+// take first frame of the video
+let frame = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+//cap.read(frame);
+          
+canvasVideoCtx.drawImage(video,0,0);
+let result = cv.imread('canvasVideo');
+
+
+let fgmask = new cv.Mat(video.height, video.width, cv.CV_8UC1);
+let fgbg = new cv.BackgroundSubtractorMOG2(500, 10*16, false);
+console.log(fgbg);
+
+const FPS = 30;
+let i = 0;
+function processVideo() {
+    try {
+        if (!streaming) {
+            // clean and stop.
+            console.log("Stopping streaming");
+            frame.delete(); fgmask.delete(); fgbg.delete();
+            cv.imshow('canvasOutput2', result);
+            return;
+        }
+        let begin = Date.now();
+        // start processing.
+        frame = cv.imread('canvasVideo');
+        //cap.read(frame);
+        let lr = 0.3;
+        if( i > 10 ) lr = 0;
+
+        fgbg.apply(frame, fgmask, lr);
+        if( i%1 == 0 ) {
+          cv.imshow('canvasOutput', fgmask);
+          //console.log("i=" + i);
+        }
+        frame.copyTo(result, fgmask);
+
+        // schedule the next one.
+        let delay = 1000/FPS - (Date.now() - begin);
+        ++i;
+        //setTimeout(processVideo, delay);
+        if( i/FPS > video.duration ) onVideoStopped();
+        video.currentTime = i/FPS ;
+
+        video.addEventListener("seeked", function(e) {
+          // remove the handler or else it will draw another frame on the same canvas in next seek
+          e.target.removeEventListener(e.type, arguments.callee); 
+          canvasVideoCtx.drawImage(video,0,0);
+          setTimeout(processVideo, delay);
+       
+        });
+
+    } catch (err) {
+        //utils.printError(err);
+    }
+};
+
+//video.play();
+// schedule the first one.
+canvasVideoCtx.drawImage(video,0,0);
+setTimeout(processVideo, 0);
+
+
+};
+
+</script>
+</body>
+</html>
+
