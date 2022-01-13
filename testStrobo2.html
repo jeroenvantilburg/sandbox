@@ -5,13 +5,17 @@
 <title>Stroboscope example</title>
 </head>
 <body>
-<h2>Stroboscope xample</h2>
-<div class="control"><button id="startAndStop" disabled>Start</button></div>
+<h2>Stroboscope example</h2>
+<div class="control">
+  <button id="videoImport">Upload new video</button>          
+  <input id="videoInput" type="file" accept="video/*,.mkv,.mov" hidden/>
+  <button id="startAndStop" disabled>Start</button>
+</div>
 <div>
     <table cellpadding="0" cellspacing="0" width="0" border="0">
     <tr>
         <td>
-            <video id="videoInput" muted style="display:none;"></video>
+            <video id="video" autoplay playsinline muted style="display:none;"></video>
             <canvas id="canvasVideo"></canvas>
         </td>
         <td>
@@ -24,12 +28,13 @@
     </table>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script async src="https://docs.opencv.org/4.5.2/opencv.js" id="opencv"></script>  
 
 <script type="text/javascript">
 
 let streaming = false;
-let video = document.getElementById('videoInput');
+let video = document.getElementById('video');
 let canvasVideo     = document.getElementById('canvasVideo');
 let canvasVideoCtx  = canvasVideo.getContext('2d');
 
@@ -37,6 +42,44 @@ let canvasVideoCtx  = canvasVideo.getContext('2d');
 let startAndStop = document.getElementById('startAndStop');
 let canvasOutput = document.getElementById('canvasOutput');
 let canvasContext = canvasOutput.getContext('2d');
+
+// Trigger click on videoInput when user clicks on menu item
+$("#videoImport").click( () => {
+      $("#videoInput").click();
+});
+
+// Add event listener for when file is selected
+$("#videoInput").change( function() {
+
+    // Get the file
+    let URL = window.URL || window.webkitURL;
+    let file = this.files[0];
+    video.src = URL.createObjectURL(file);
+
+    console.log("Imported video");
+
+});
+
+  // Prepare canvas size, calibration controls and set frame rate when meta data is available
+video.addEventListener('loadedmetadata', () => {
+    console.log("Loaded metadata");
+
+      video.height = video.videoHeight;
+      video.width = video.videoWidth;
+      canvasVideo.width = video.videoWidth;
+      canvasVideo.height = video.videoHeight;
+
+    // Pause the video (needed because of autoplay)
+    video.pause();
+});
+
+// Show the video when it has been loaded
+video.addEventListener('loadeddata', () => {    
+    //video.currentTime( 0 );
+    console.log("Loaded video");
+    canvasVideoCtx.drawImage(video,0,0);
+});
+
 
 startAndStop.addEventListener('click', () => {
     if (!streaming) {
@@ -65,10 +108,12 @@ function onVideoStopped() {
 
 document.getElementById('opencv').onload = function () {
   console.log("OpenCV is ready");
-    video.addEventListener('canplay', () => {
+  video.addEventListener('canplay', () => {
         startAndStop.removeAttribute('disabled');
-    });
-  video.src="demo_bounching_ball.mp4"
+  });
+  // Use this with: python3 -m http.server --cgi 8080
+  //video.src="demo_bounching_ball.mp4";
+  //console.log(video);
   if( window.cv instanceof Promise ) {
     console.log("cv returns a promise");
     window.cv.then((target) => {
