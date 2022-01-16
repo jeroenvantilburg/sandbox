@@ -4,12 +4,25 @@
 <meta charset="utf-8">
 <title>Stroboscope example</title>
 </head>
+<style>
+input {
+  width: 50px;
+}
+</style>
 <body>
 <h2>Stroboscope example</h2>
 <div class="control">
   <button id="videoImport">Upload new video</button>          
   <input id="videoInput" type="file" accept="video/*,.mkv,.mov" hidden/>
   <button id="startAndStop" disabled>Start</button>
+  <input id="frequency" type="number" step="1" value="3"></input>
+  <input id="threshold" type="number" step="1" value="50"></input>
+  <input id="history" type="number" step="1" value="20"></input>
+  <input id="learningRate" type="number" value="-0.1"></input>
+  <input id="nmixtures" type="number" value="5"></input>
+  <input id="backgroudRatio" type="number" value="0.1"></input>
+  <input id="twoPass" type="checkbox" checked></input>
+  <input id="shadowThreshold" type="number" value="0.5"></input>
 </div>
 <div>
     <table cellpadding="0" cellspacing="0" width="0" border="0">
@@ -21,15 +34,21 @@
         <td>
             <canvas id="canvasOutput"></canvas>
         </td>
+    </tr>
+    <tr>
         <td>
             <canvas id="canvasOutput2"></canvas>
+        </td>
+        <td>
+            <canvas id="canvasOutput3"></canvas>
         </td>
     </tr>
     </table>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script async src="https://docs.opencv.org/4.5.2/opencv.js" id="opencv"></script>  
+<!--script async src="https://docs.opencv.org/4.5.2/opencv.js" id="opencv"></script-->  
+<script async src="scripts/opencv_bgfg.js" id="opencv"></script>  
 
 <script type="text/javascript">
 
@@ -101,7 +120,7 @@ function onVideoStarted() {
 
 function onVideoStopped() {
     streaming = false;
-    //video.currentTime = 0;
+    video.currentTime = 0;
     //canvasContext.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
     startAndStop.innerText = 'Start';
 }
@@ -126,49 +145,117 @@ document.getElementById('opencv').onload = function () {
 
 function loadRest() {
 
-//let cap = new cv.VideoCapture(video);
+
 // take first frame of the video
+let frameRGB = new cv.Mat();
 let frame = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-//cap.read(frame);
-          
 canvasVideoCtx.drawImage(video,0,0);
 let result = cv.imread('canvasVideo');
+//let cap = new cv.VideoCapture(video);
+//let result = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+//cap.read(result);
 
 
+let fgResult = new cv.Mat(video.height, video.width, cv.CV_8UC3);
+
+let bgMat = new cv.Mat(video.height, video.width, cv.CV_8UC3);
+
+let mask = new cv.Mat(video.height, video.width, cv.CV_8UC1);
 let fgmask = new cv.Mat(video.height, video.width, cv.CV_8UC1);
-let fgbg = new cv.BackgroundSubtractorMOG2(500, 10*16, false);
-console.log(fgbg);
+let shadowmask = new cv.Mat(video.height, video.width, cv.CV_8UC1);
+
+
+let threshold = parseFloat($("#threshold").val());
+let history = parseInt($("#history").val());
+let fgbg = new cv.BackgroundSubtractorMOG2(history, threshold, true);
+//console.log(fgbg);
+
+let lrInput = parseFloat($("#learningRate").val());
+//let lr = 1; // Only for first frame
+let lr=lrInput;
 
 const FPS = 30;
 let i = 0;
+let f = parseInt($("#frequency").val());
+let firstPass = $('#twoPass').is(':checked');
+
+//let firstPass = false; // No second pass
+
+console.log("Best lr=" + 1/(FPS*video.duration) + " (used lr="+lr+")");
+fgbg.setNMixtures( parseFloat($("#nmixtures").val()) ); 
+console.log("nmixtures= "+ fgbg.getNMixtures() );
+fgbg.setBackgroundRatio( parseFloat($("#backgroudRatio").val()) ); 
+console.log("backgroudRatio= "+ fgbg.getBackgroundRatio() );
+
+fgbg.setShadowThreshold( parseFloat($("#shadowThreshold").val()) ); 
+console.log("ShadowThreshold= "+ fgbg.getShadowThreshold() );
+
 function processVideo() {
     try {
         if (!streaming) {
             // clean and stop.
-            console.log("Stopping streaming");
-            frame.delete(); fgmask.delete(); fgbg.delete();
-            cv.imshow('canvasOutput2', result);
+            //console.log("Stopping streaming");
+            console.log( "i = " + i);
+            console.log("nmixtures= "+ fgbg.getNMixtures() );
+
+            fgResult.copyTo(result, fgResult);
+
+            cv.imshow('canvasOutput3', result);
+            frame.delete(); mask.delete(); fgbg.delete();result.delete();
             return;
         }
-        let begin = Date.now();
+        //let begin = Date.now();
         // start processing.
         frame = cv.imread('canvasVideo');
-        //cap.read(frame);
-        let lr = 0.3;
-        if( i > 10 ) lr = 0;
 
-        fgbg.apply(frame, fgmask, lr);
-        if( i%1 == 0 ) {
-          cv.imshow('canvasOutput', fgmask);
+        // See: https://github.com/opencv/opencv/issues/17206
+        cv.cvtColor(frame, frameRGB, cv.COLOR_RGBA2RGB); 
+
+        //cap.read(frame);
+
+        //if( firstPass && i>0 ) lr = lrInput;
+
+        //if( i%f == 0 ) {
+          fgbg.apply(frameRGB, mask, lr);
+
+          if( !firstPass ) {
+            cv.threshold(mask, fgmask, 200, 255, cv.THRESH_BINARY);
+            frame.copyTo(fgResult, fgmask);
+
+            //cv.bitwise_xor(mask, fgmask, shadowmask, mask);
+            //frame.copyTo(result, shadowmask);
+            frame.copyTo(result, mask);
+          }
+
+          cv.imshow('canvasOutput', mask);
+          fgbg.getBackgroundImage(bgMat);
+          cv.imshow('canvasOutput2', bgMat);
           //console.log("i=" + i);
-        }
-        frame.copyTo(result, fgmask);
+
+          // Temporary end here
+          /*if( !firstPass && i==0 ) {
+            onVideoStopped();
+            cv.imshow('canvasOutput3', result);
+            frame.delete(); mask.delete(); fgbg.delete();result.delete();
+            return;            
+          }*/
+        //}
 
         // schedule the next one.
-        let delay = 1000/FPS - (Date.now() - begin);
-        ++i;
+        let delay = 0;//1000/FPS - (Date.now() - begin);
+        i += Math.round(f);
         //setTimeout(processVideo, delay);
-        if( i/FPS > video.duration ) onVideoStopped();
+        if( i/FPS > video.duration ) {
+          if( firstPass ) {
+            firstPass = false;
+            i = 0;
+            // Set the next iteration to zero
+            lr = 0.0;
+            //console.log("threshold= " + fgbg.getVarThreshold(  ));
+          } else {
+            onVideoStopped();
+          }
+        }
         video.currentTime = i/FPS ;
 
         video.addEventListener("seeked", function(e) {
@@ -180,14 +267,24 @@ function processVideo() {
         });
 
     } catch (err) {
+       console.error('There was an error:', err);
         //utils.printError(err);
+       console.log(cv.exceptionFromPtr(err).msg);
     }
 };
 
 //video.play();
 // schedule the first one.
-canvasVideoCtx.drawImage(video,0,0);
-setTimeout(processVideo, 0);
+video.currentTime = 0 ;
+        video.addEventListener("seeked", function(e) {
+          // remove the handler or else it will draw another frame on the same canvas in next seek
+          e.target.removeEventListener(e.type, arguments.callee); 
+          canvasVideoCtx.drawImage(video,0,0);
+          result = cv.imread('canvasVideo');
+          setTimeout(processVideo, 0);
+       
+        });
+
 
 
 };
