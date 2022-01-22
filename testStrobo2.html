@@ -15,14 +15,20 @@ input {
   <button id="videoImport">Upload new video</button>          
   <input id="videoInput" type="file" accept="video/*,.mkv,.mov" hidden/>
   <button id="startAndStop" disabled>Start</button>
-  <input id="frequency" type="number" step="1" value="3"></input>
-  <input id="threshold" type="number" step="1" value="50"></input>
-  <input id="history" type="number" step="1" value="20"></input>
+  <input id="frequency" type="number" step="1" value="1"></input>
+  <input id="threshold" type="number" step="1" value="16"></input>
+  <input id="history" type="number" step="1" value="5"></input>
   <input id="learningRate" type="number" value="-0.1"></input>
   <input id="nmixtures" type="number" value="5"></input>
-  <input id="backgroudRatio" type="number" value="0.1"></input>
+  <input id="backgroudRatio" type="number" value="0.5"></input>
   <input id="twoPass" type="checkbox" checked></input>
   <input id="shadowThreshold" type="number" value="0.5"></input>
+  <input id="skip" type="number" value="1"></input> <br/>
+  <input id="varThresholdGen" type="number" value="9"></input>
+  <input id="varInit" type="number" value="400"></input>
+  <input id="varMin" type="number" value="4"></input>
+  <input id="varMax" type="number" value="1600"></input>
+  <input id="CRT" type="number" value="0.05"></input>
 </div>
 <div>
     <table cellpadding="0" cellspacing="0" width="0" border="0">
@@ -62,6 +68,8 @@ let startAndStop = document.getElementById('startAndStop');
 let canvasOutput = document.getElementById('canvasOutput');
 let canvasContext = canvasOutput.getContext('2d');
 
+const FPS = 30;
+
 // Trigger click on videoInput when user clicks on menu item
 $("#videoImport").click( () => {
       $("#videoInput").click();
@@ -90,6 +98,9 @@ video.addEventListener('loadedmetadata', () => {
 
     // Pause the video (needed because of autoplay)
     video.pause();
+
+    $("#history").val( Math.round(FPS * video.duration) );
+
 });
 
 // Show the video when it has been loaded
@@ -143,6 +154,38 @@ document.getElementById('opencv').onload = function () {
   
 };
 
+
+let masks = [];
+let fgmasks = [];
+let bgMat;
+
+$("#skip").change( function() {
+  showResult( parseInt($(this).val()) ); 
+});
+
+function showResult(nSkip) {
+
+  let newResult = new cv.Mat(video.height, video.width, cv.CV_8UC4);//bgMat.clone();
+  //console.log( bgMat.type() );
+  cv.cvtColor( bgMat, newResult, cv.COLOR_BGR2BGRA );
+  //new cv.Mat(video.height, video.width, cv.CV_8UC3);
+  for( let i=0; i < masks.length && nSkip > 0; i += nSkip ) {
+    masks[i].copyTo(newResult, masks[i]);
+    //console.log("shadow= " + i);
+  }
+  cv.imshow('canvasOutput3', newResult);
+
+  for( let j=0; j < fgmasks.length && nSkip > 0; j += nSkip ) {
+    fgmasks[j].copyTo(newResult, fgmasks[j]);
+    //console.log("foregr= " + i);
+  }
+
+  cv.imshow('canvasOutput3', newResult);
+  newResult.delete();
+
+}
+
+
 function loadRest() {
 
 
@@ -158,15 +201,18 @@ let result = cv.imread('canvasVideo');
 
 let fgResult = new cv.Mat(video.height, video.width, cv.CV_8UC3);
 
-let bgMat = new cv.Mat(video.height, video.width, cv.CV_8UC3);
+bgMat = new cv.Mat(video.height, video.width, cv.CV_8UC3);
 
 let mask = new cv.Mat(video.height, video.width, cv.CV_8UC1);
 let fgmask = new cv.Mat(video.height, video.width, cv.CV_8UC1);
-let shadowmask = new cv.Mat(video.height, video.width, cv.CV_8UC1);
+//let shadowmask = new cv.Mat(video.height, video.width, cv.CV_8UC1);
 
+masks = [];
+fgmasks = [];
 
+let f = parseInt($("#frequency").val());
 let threshold = parseFloat($("#threshold").val());
-let history = parseInt($("#history").val());
+let history = Math.round( 2 * parseInt($("#history").val()) / f );
 let fgbg = new cv.BackgroundSubtractorMOG2(history, threshold, true);
 //console.log(fgbg);
 
@@ -174,9 +220,7 @@ let lrInput = parseFloat($("#learningRate").val());
 //let lr = 1; // Only for first frame
 let lr=lrInput;
 
-const FPS = 30;
 let i = 0;
-let f = parseInt($("#frequency").val());
 let firstPass = $('#twoPass').is(':checked');
 
 //let firstPass = false; // No second pass
@@ -189,6 +233,13 @@ console.log("backgroudRatio= "+ fgbg.getBackgroundRatio() );
 
 fgbg.setShadowThreshold( parseFloat($("#shadowThreshold").val()) ); 
 console.log("ShadowThreshold= "+ fgbg.getShadowThreshold() );
+
+fgbg.setVarThresholdGen( parseFloat($("#varThresholdGen").val()) ); 
+fgbg.setVarInit( parseFloat($("#varInit").val()) ); 
+fgbg.setVarMin( parseFloat($("#varMin").val()) ); 
+fgbg.setVarMax( parseFloat($("#varMax").val()) ); 
+fgbg.setComplexityReductionThreshold( parseFloat($("#CRT").val()) ); 
+
 
 function processVideo() {
     try {
@@ -209,7 +260,9 @@ function processVideo() {
         frame = cv.imread('canvasVideo');
 
         // See: https://github.com/opencv/opencv/issues/17206
-        cv.cvtColor(frame, frameRGB, cv.COLOR_RGBA2RGB); 
+        cv.cvtColor(frame, frameRGB, cv.COLOR_RGBA2RGB);
+
+        //cv.medianBlur(frameRGB, frameRGB, 3);
 
         //cap.read(frame);
 
@@ -218,13 +271,39 @@ function processVideo() {
         //if( i%f == 0 ) {
           fgbg.apply(frameRGB, mask, lr);
 
+          //let fgmask2
+
           if( !firstPass ) {
             cv.threshold(mask, fgmask, 200, 255, cv.THRESH_BINARY);
+
+            //let fgmask2 = new cv.Mat(video.height, video.width, cv.CV_8UC1);
+            //let M = cv.Mat.ones(2, 2, cv.CV_8U);
+            //cv.erode(fgmask, fgmask, M);
+            //cv.dilate(fgmask, fgmask, M);
+            //cv.threshold(fgmask, fgmask, 100, 255, cv.THRESH_BINARY);
+            
+            //cv.bilateralFilter(fgmask, fgmask, 9, 150, 175, cv.BORDER_DEFAULT);
+            //cv.medianBlur(fgmask, fgmask, 3);
+
             frame.copyTo(fgResult, fgmask);
+
+            let fgtemp = new cv.Mat(video.height, video.width, cv.CV_8UC4, [0, 0, 0, 255]);
+            frame.copyTo(fgtemp, fgmask);
+            let temp = new cv.Mat(video.height, video.width, cv.CV_8UC4, [0, 0, 0, 255]);
+
+            frame.copyTo(temp, mask);
+
+                      //cv.imshow('canvasOutput2', temp);
+
+            masks.push( temp );
+            fgmasks.push( fgtemp );
 
             //cv.bitwise_xor(mask, fgmask, shadowmask, mask);
             //frame.copyTo(result, shadowmask);
             frame.copyTo(result, mask);
+
+          //cv.imshow('canvasOutput', fgmask2);
+
           }
 
           cv.imshow('canvasOutput', mask);
