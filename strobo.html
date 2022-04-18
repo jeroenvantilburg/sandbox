@@ -150,15 +150,32 @@ function showResult(nSkip) {
 
   let newResult = new cv.Mat(video.height, video.width, cv.CV_8UC4);//bgMat.clone();
   cv.cvtColor( bgMat, newResult, cv.COLOR_BGR2BGRA );
+  //let newResult2 = new cv.Mat(video.height, video.width, cv.CV_8UC4);//bgMat.clone();
+  //cv.cvtColor( bgMat, newResult2, cv.COLOR_BGR2BGRA );
+
+
   console.log("numbers of frames = " + masks.length);
   for( let i=0; i < masks.length && nSkip > 0; i += nSkip ) {
     masks[i].copyTo(newResult, masks[i]);
   }
 
+  //let newResult2 = new cv.Mat(video.height, video.width, cv.CV_8UC4);//bgMat.clone();
   for( let j=0; j < fgmasks.length && nSkip > 0; j += nSkip ) {
     fgmasks[j].copyTo(newResult, fgmasks[j]);
+    //cv.addWeighted(newResult, 0.5, fgmasks[j], 0.5, 0.0, newResult2);
+    //fgmasks[j].copyTo(newResult2, fgmasks[j]);
+    //cv.addWeighted(newResult, 0.3, newResult2, 0.7, 0.0, newResult);
+    //newResult.copyTo(newResult2);
   }
 
+  /*let j=fgmasks.length-3;
+
+  let bgMatA = new cv.Mat(video.height, video.width, cv.CV_8UC4);//bgMat.clone();
+  cv.cvtColor( bgMat, bgMatA, cv.COLOR_BGR2BGRA );
+
+  fgmasks[j].copyTo(newResult, fgmasks[j]);
+  cv.addWeighted(bgMatA, 0.5, newResult, 0.5, 0.0, bgMatA);
+*/
   cv.imshow('canvasOutput3', newResult);
   newResult.delete();
 }
@@ -235,9 +252,9 @@ function processVideo() {
             //cv.bilateralFilter(fgmask, fgmask, 9, 150, 175, cv.BORDER_DEFAULT);
             //cv.medianBlur(fgmask, fgmask, 3);
 
-          let fgtemp = new cv.Mat(video.height, video.width, cv.CV_8UC4, [0, 0, 0, 255]);
+          let fgtemp = new cv.Mat(video.height, video.width, cv.CV_8UC4, [0, 0, 0, 0]);
           frame.copyTo(fgtemp, fgmask);
-          let temp = new cv.Mat(video.height, video.width, cv.CV_8UC4, [0, 0, 0, 255]);
+          let temp = new cv.Mat(video.height, video.width, cv.CV_8UC4, [0, 0, 0, 0]);
           frame.copyTo(temp, mask);
           masks.push( temp );
           fgmasks.push( fgtemp );
